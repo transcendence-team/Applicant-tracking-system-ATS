@@ -33,7 +33,6 @@ This project is an Enterprise Applicant Tracking System (ATS) designed to stream
 ### DevOps & Infrastructure (5 Points)
 * **Backend as Microservices (Major - 2pts):** The architecture is split into loosely coupled, containerized services (Frontend/API Service, AI Processing Worker, Relational Database) routed via NGINX.
 * **Monitoring System (Major - 2pts):** Prometheus collecting internal metrics from the microservices, visualized through a Grafana dashboard displaying real-time server health and API load.
-* **Health Check & Disaster Recovery (Minor - 1pt):** Automated status page routing, database backup cron jobs, and failover procedures.
 
 ## 4. Potential Fallback Modules (Extra Points)
 
