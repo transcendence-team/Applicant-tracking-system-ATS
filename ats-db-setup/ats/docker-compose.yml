@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ats-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ats_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ats
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend_net]
+    ports:
+      - "5432:5432"   # dev only - remove in the final version (only backend_net should reach the DB)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ats_admin -d ats"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+
+networks:
+  backend_net:
