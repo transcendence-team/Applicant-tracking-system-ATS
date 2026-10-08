@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+
+  nginx:
+    container_name: nginx
+    network:
+      - frontend_net
+
+  frontend:
+    container_name: frontend
+    network:
+      - frontend_net
+
+  auth-api:
+    container_name: auth-api
+    network:
+      - frontend_net
+      - backend_net
+
+  ats-api:
+    container_name: ats-api
+    network:
+      - frontend_net
+      - backend_net\
+
+
+  ai-worker:
+    container_name: ai-worker
+    network: 
+      - backend_net
+
+  postgres_db:
+    container_name: postgres_db
+    network: 
+      - backend_net
+
+
+
+networks:
+  frontend_net:
+    driver: bridge     
+  backend_net:
+    driver: bridge
+
+
+
+volumes:
+  postgres_data:
