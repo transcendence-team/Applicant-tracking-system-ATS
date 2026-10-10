@@ -1,40 +1,85 @@
-version: '3.8'
-
 services:
 
   nginx:
+    image: nginx:latest
+    restart: always 
     container_name: nginx
-    network:
+    ports:
+      - "8443:443"
+    networks:
       - frontend_net
 
-  frontend:
-    container_name: frontend
-    network:
-      - frontend_net
-
-  auth-api:
-    container_name: auth-api
-    network:
-      - frontend_net
-      - backend_net
-
-  ats-api:
-    container_name: ats-api
-    network:
-      - frontend_net
-      - backend_net\
+  # frontend:
+  #   build: ./src/frontend
+  #   container_name: frontend
+  #   networks:
+  #     - frontend_net
 
 
-  ai-worker:
-    container_name: ai-worker
-    network: 
-      - backend_net
+  # auth-api:
+  #   build: ./src/auth-service
+  #   container_name: auth-api
+  #   networks:
+  #     - frontend_net
+  #     - backend_net
+  #   depends_on:
+  #     postgres_db:
+  #       condition: service_healthy
+  #       restart: true
+
+  # ats-api:
+  #   build: ./src/ats-service
+  #   container_name: ats-api
+  #   networks:
+  #     - frontend_net
+  #     - backend_net
+  #   depends_on:
+  #     postgres_db:
+  #       condition: service_healthy
+  #       restart: true
+
+  # ai-worker:
+  #   build: ./src/ai-worker
+  #   container_name: ai-worker
+  #   networks: 
+  #     - backend_net
+  #   depends_on:
+  #     postgres_db:
+  #       condition: service_healthy
+  #       restart: true
+
 
   postgres_db:
+    image: postgres:18
+    restart: always
     container_name: postgres_db
-    network: 
+    networks:
       - backend_net
+    env_file:
+      - src/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./src/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - backend_net
+      - frontend_net
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+        restart: true
 
 
 networks:
@@ -47,3 +92,8 @@ networks:
 
 volumes:
   postgres_data:
+
+
+# models:
+#   llm:
+
