@@ -1,0 +1,26 @@
+package com.ats.auth.controller;
+
+import com.ats.auth.dto.LoginRequest;
+import com.ats.auth.dto.RegisterRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    @PostMapping("/login")
+    public String login(@Valid @RequestBody LoginRequest request) {
+        // For now, just prove that Spring parsed the JSON body into our DTO
+        return "Received login request for email: " + request.getPassword();
+    }
+
+     @PostMapping("/register")
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok("Registration valid for: " + request.getEmail());
+    }
+}
