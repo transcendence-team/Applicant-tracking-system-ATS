@@ -16,16 +16,22 @@ services:
   #     - frontend_net
 
 
-  # auth-api:
-  #   build: ./src/auth-service
-  #   container_name: auth-api
-  #   networks:
-  #     - frontend_net
-  #     - backend_net
-  #   depends_on:
-  #     postgres_db:
-  #       condition: service_healthy
-  #       restart: true
+  auth-service:
+    build:
+      context: ./src/auth-service          # Dockerfile location
+      dockerfile: Dockerfile
+    container_name: auth-service
+    restart: always
+    networks:
+      - backend_net
+    env_file:
+      - src/.env        # injects POSTGRES_* into the container; Spring resolves them in application.yaml
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    ports:
+      - "8081:8080"   # TEMPORARY: remove once nginx proxies /api/auth
+
 
   # ats-api:
   #   build: ./src/ats-service
