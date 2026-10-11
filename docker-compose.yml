@@ -17,9 +17,7 @@ services:
 
 
   auth-service:
-    build:
-      context: ./src/auth-service          # Dockerfile location
-      dockerfile: Dockerfile
+    build: ./src/auth-service
     container_name: auth-service
     restart: always
     networks:
