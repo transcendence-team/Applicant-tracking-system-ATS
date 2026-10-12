@@ -5,16 +5,16 @@ services:
     restart: always 
     container_name: nginx
     ports:
-      - "443:443"
+      - "8443:443"
     networks:
       - frontend_net
 
-  frontend:
-    build: ./src/frontend
-    restart: always
-    container_name: frontend
-    networks:
-      - frontend_net
+  # frontend:
+  #   build: ./src/frontend
+  #   restart: always
+  #   container_name: frontend
+  #   networks:
+  #     - frontend_net
 
   auth-api:
     build: ./src/auth-service
@@ -30,16 +30,16 @@ services:
         condition: service_healthy
         restart: true
 
-  ats-api:
-    build: ./src/ats-service
-    container_name: ats-api
-    networks:
-      - frontend_net
-      - backend_net
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-        restart: true
+  # ats-api:
+  #   build: ./src/ats-service
+  #   container_name: ats-api
+  #   networks:
+  #     - frontend_net
+  #     - backend_net
+  #   depends_on:
+  #     postgres_db:
+  #       condition: service_healthy
+  #       restart: true
 
   # ai-worker:
   #   build: ./src/ai-worker
