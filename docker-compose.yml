@@ -5,7 +5,7 @@ services:
     restart: always 
     container_name: nginx
     ports:
-      - "8443:443"
+      - "443:443"
     networks:
       - frontend_net
 
