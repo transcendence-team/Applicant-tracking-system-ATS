@@ -3,15 +3,12 @@ spring:
     name: auth-service
   datasource:
     driver-class-name: org.postgresql.Driver
-    # ${...} values come from the container env (env_file: src/.env in docker-compose)
     url: jdbc:postgresql://postgres_db:5432/${POSTGRES_AUTH_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-
-
   jpa:
     hibernate:
-      ddl-auto: update   # creates/updates tables automatically (dev mode)
+      ddl-auto: update
     show-sql: true
 
 #     When Spring Boot boots up, Hibernate scans all classes annotated with @Entity in com.ats.auth.
@@ -20,5 +17,5 @@ spring:
 # Since it didn't exist, Hibernate generated and executed the raw SQL DDL automatically:
 
 jwt:
-    secret: ${JWT_SECRET}
-    expiration-ms: ${JWT_EXPIRATION_MS:7200000}
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:7200000}
