@@ -7,7 +7,18 @@ spring:
     url: jdbc:postgresql://postgres_db:5432/${POSTGRES_AUTH_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+
+
   jpa:
     hibernate:
       ddl-auto: update   # creates/updates tables automatically (dev mode)
     show-sql: true
+
+#     When Spring Boot boots up, Hibernate scans all classes annotated with @Entity in com.ats.auth.
+# It finds User.java
+# It asks PostgreSQL: "Does a table named users exist in auth_db?"
+# Since it didn't exist, Hibernate generated and executed the raw SQL DDL automatically:
+
+jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:7200000}

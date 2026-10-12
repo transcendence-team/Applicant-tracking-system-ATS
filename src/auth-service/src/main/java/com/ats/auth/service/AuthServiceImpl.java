@@ -1,10 +1,14 @@
 package com.ats.auth.service;
 
+import com.ats.auth.dto.AuthResponse;
+import com.ats.auth.dto.LoginRequest;
 import com.ats.auth.dto.RegisterRequest;
 import com.ats.auth.entity.Role;
 import com.ats.auth.entity.User;
 import com.ats.auth.exception.EmailAlreadyExistsException;
+import com.ats.auth.exception.InvalidCredentialsException;
 import com.ats.auth.repository.UserRepository;
+import com.ats.auth.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,23 +20,44 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider; // injected automatically
 
     @Override
     @Transactional
     public void register(RegisterRequest request) {
-        // 1. Check if email already registered
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("Email is already registered: " + request.getEmail());
         }
 
-        // 2. Hash password and build User entity
         User user = User.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(Role.ROLE_APPLICANT) // Default rule: public registrations are APPLICANT
+                .role(Role.ROLE_APPLICANT)
                 .build();
 
-        // 3. Save to PostgreSQL
         userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AuthResponse login(LoginRequest request) {
+        // 1. Find user by email in PostgreSQL
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+
+        // 2. Check password with BCrypt
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        // 3. Mint JWT matching TECH_STACK.md contract
+        String token = jwtTokenProvider.generateToken(user);
+
+        // 4. Return AuthResponse
+        return AuthResponse.builder()
+                .accessToken(token)
+                .tokenType("Bearer")
+                .expiresIn(jwtTokenProvider.getExpirationInSeconds())
+                .build();
     }
 }
