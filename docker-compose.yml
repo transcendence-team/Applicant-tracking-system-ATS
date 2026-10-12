@@ -16,10 +16,12 @@ services:
     networks:
       - frontend_net
 
-
   auth-api:
     build: ./src/auth-service
     container_name: auth-api
+    restart: always
+    env_file:
+      - src/.env
     networks:
       - frontend_net
       - backend_net
