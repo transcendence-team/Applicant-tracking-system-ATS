@@ -5,11 +5,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration                  // sets up setup code for spring
 public class SecurityConfig {
 
     @Bean                       // Spring calls this once at startup and keeps the result
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())    // CSRF protects cookie-based browser forms; not needed for a JWT API
@@ -20,4 +26,6 @@ public class SecurityConfig {
             );
         return http.build();
     }
+    
+
 }
