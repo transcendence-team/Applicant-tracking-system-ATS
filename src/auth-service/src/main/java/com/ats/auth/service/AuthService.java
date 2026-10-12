@@ -1,5 +1,7 @@
 package com.ats.auth.service;
 
+import com.ats.auth.dto.AuthResponse;
+import com.ats.auth.dto.LoginRequest;
 import com.ats.auth.dto.RegisterRequest;
 
 
