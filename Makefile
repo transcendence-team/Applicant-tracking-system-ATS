@@ -1,7 +1,3 @@
-# ============================================================
-# ATS Project - Makefile
-# ============================================================
-
 COMPOSE      ?= docker compose
 ENV_FILE     := src/.env
 ENV_EXAMPLE  := src/.env.example
@@ -26,20 +22,6 @@ export
         clean fclean re db-up db-init db-down db-status \
         db-check db-shell db-logs install db-generate \
         db-migrate db-deploy db-seed db-studio db-reset psql
-
-# ============================================================
-# General
-# ============================================================
-
-help: ## Show available commands
-	@awk 'BEGIN {FS = ":.*##"; print "\nUsage: make <target>\n"} \
-	/^[a-zA-Z_-]+:.*##/ {printf "  %-16s %s\n", $$1, $$2}' \
-	$(MAKEFILE_LIST)
-
-env: ## Create src/.env if missing
-	@test -f $(ENV_FILE) || \
-		(cp $(ENV_EXAMPLE) $(ENV_FILE) && \
-		echo "Created $(ENV_FILE). Edit it before starting.")
 
 up: env ## Build and start all services
 	$(COMPOSE) up -d --build
@@ -169,3 +151,8 @@ db-reset: ## Reset ATS database (DELETES ATS DATA)
 	cd $(ATS_DIR) && \
 		DATABASE_URL="$(DATABASE_URL)" \
 		npx prisma migrate reset --force
+
+save: ## Generate ,migrate, seed  
+	docker compose run --rm ats-api npx prisma generate \
+	docker compose run --rm ats-api npx prisma migrate deploy \
+	docker compose run --rm ats-api npx prisma db seed

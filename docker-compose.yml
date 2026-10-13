@@ -35,6 +35,7 @@ services:
     container_name: ats-api
     networks:
       - backend_net
+      - frontend_net
     env_file:
       - src/.env
     volumes:
