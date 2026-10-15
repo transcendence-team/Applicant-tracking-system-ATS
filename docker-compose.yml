@@ -21,12 +21,12 @@ services:
     container_name: auth-api
     restart: always
     env_file:
-      - src/.env
+      - .env
     networks:
       - frontend_net
       - backend_net
     depends_on:
-      postgres_db:
+      auth_db:
         condition: service_healthy
         restart: true
 
@@ -37,7 +37,7 @@ services:
   #     - frontend_net
   #     - backend_net
   #   depends_on:
-  #     postgres_db:
+  #     ats_db:
   #       condition: service_healthy
   #       restart: true
 
@@ -47,21 +47,23 @@ services:
   #   networks: 
   #     - backend_net
   #   depends_on:
-  #     postgres_db:
+  #     ats_db:
   #       condition: service_healthy
   #       restart: true
 
 
-  postgres_db:
-    image: postgres:18
+  ats_db:
+    image: postgres:18-alpine
     restart: always
-    container_name: postgres_db
+    container_name: ats_db
     networks:
       - backend_net
-    env_file:
-      - src/.env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - ats_data:/var/lib/postgresql
       - ./src/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
@@ -70,20 +72,42 @@ services:
       start_period: 30s
       timeout: 10s
 
+
+  auth_db:
+    image: postgres:18-alpine
+    restart: always
+    container_name: auth_db
+    networks:
+      - backend_net
+    environment:
+      POSTGRES_DB: ${AUTH_DB_NAME}
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASS}
+    volumes:
+      - auth_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+
+
   adminer:
     image: adminer
     container_name: adminer
     restart: always
-    ports:
-      - "8080:8080"
     networks:
       - backend_net
       - frontend_net
     depends_on:
-      postgres_db:
+      auth_db:
         condition: service_healthy
         restart: true
-
+      ats_db:
+        condition: service_healthy
+        restart: true
 
 networks:
   frontend_net:
@@ -94,7 +118,8 @@ networks:
 
 
 volumes:
-  postgres_data:
+  auth_data:
+  ats_data:
 
 
 # models:
