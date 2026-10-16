@@ -1,0 +1,32 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [ "dev", "main" ]
+    paths:
+      - 'src/frontend/**'
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    # This default tells GitHub to run all npm commands inside the frontend folder
+    defaults:
+      run:
+        working-directory: src/frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Adjust if your Next.js uses a different Node version
+          cache: 'npm'
+          cache-dependency-path: 'src/frontend/package-lock.json'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Test Build
+        run: npm run build

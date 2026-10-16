@@ -1,0 +1,48 @@
+name: Auth Service CI
+
+on:
+  pull_request:
+    branches: [ "dev", "main" ]
+    paths:
+      - 'src/auth-service/**'
+
+jobs:
+  test-auth:
+    runs-on: ubuntu-latest
+
+    # 1. Spin up a temporary, ephemeral Database for the tests
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: auth_admin
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: auth_service_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # 2. Pass the environment variables to Maven so Spring Boot can boot up
+      - name: Run Maven Tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/auth_service_db
+          SPRING_DATASOURCE_USERNAME: auth_admin
+          SPRING_DATASOURCE_PASSWORD: test_password
+          JWT_SECRET: wtbcrCTmi9kaMqSsw0DJV466PBMEmg35De7RsMOxt7D_ATS_2026_SECURE_KEY_32BYTES
+          JWT_EXPIRATION_MS: 7200000
+        run: mvn -B test --file src/auth-service/pom.xml
