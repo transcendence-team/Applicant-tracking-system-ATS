@@ -37,12 +37,12 @@ services:
       - backend_net
       - frontend_net
     env_file:
-      - src/.env
+      - .env
     volumes:
       - ./src/ats-service:/app
       - /app/node_modules
     depends_on:
-      postgres_db:
+      ats_db:
         condition: service_healthy
         restart: true
 
@@ -69,7 +69,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
     volumes:
       - ats_data:/var/lib/postgresql
-      - ./src/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
