@@ -1,7 +1,7 @@
 COMPOSE      ?= docker compose
 ENV_FILE     := src/.env
 ENV_EXAMPLE  := src/.env.example
-ATS_DIR      := src/ats-service
+ATS_DIR      := src/database
 
 DB_SERVICE   ?= postgres_db
 DB_PORT      ?= 5433
