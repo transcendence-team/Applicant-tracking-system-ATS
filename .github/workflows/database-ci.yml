@@ -11,7 +11,11 @@ jobs:
   test-ats-db:
     runs-on: ubuntu-latest
     
-    # 1. Ephemeral PostgreSQL Container for ats_db
+    # ADD THIS BLOCK: Tell GitHub which folder contains your package.json
+    defaults:
+      run:
+        working-directory: src/ats-core # <-- Change this if your folder is named differently (e.g., src/ats-api)
+
     services:
       postgres_db:
         image: postgres:15-alpine
