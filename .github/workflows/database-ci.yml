@@ -50,7 +50,7 @@ jobs:
 
       # 3. Prisma Workflow Execution
       - name: Generate Custom Prisma Client
-        run: npx prisma generate --schema=../postgres/ats-db/prisma/schema.prisma
+        run: npx prisma generate --schema=../../src/postgres/ats-db/prisma/schema.prisma
 
       - name: Apply Migrations to ats_db
         run: npx prisma migrate deploy
