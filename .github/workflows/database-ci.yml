@@ -57,8 +57,7 @@ jobs:
 
       - name: Seed Reference Data (Statuses & Skills)
         run: |
-          npm install dotenv @prisma/adapter-pg pg --prefix ../postgres/ats-db
+          npm install dotenv @prisma/adapter-pg pg @prisma/client --prefix ../postgres/ats-db
           npx tsx ../postgres/ats-db/prisma/seed.ts
-
       - name: Run ATS API Tests
         run: npm test
