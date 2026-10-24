@@ -56,7 +56,9 @@ jobs:
         run: npx prisma migrate deploy --schema=../../src/postgres/ats-db/prisma/schema.prisma
 
       - name: Seed Reference Data (Statuses & Skills)
-        run: npx tsx ../postgres/ats-db/prisma/seed.ts
+        run: |
+          npm install dotenv --prefix ../postgres/ats-db
+          npx tsx ../postgres/ats-db/prisma/seed.ts
 
       - name: Run ATS API Tests
         run: npm test
