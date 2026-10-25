@@ -53,7 +53,7 @@ jobs:
         run: npx prisma generate --schema=../../src/postgres/ats-db/prisma/schema.prisma
 
       - name: Apply Migrations to ats_db
-        run: npx prisma migrate deploy --schema=../../src/postgres/ats-db/prisma/schema.prisma
+        run: npx prisma db push --schema=../postgres/ats-db/prisma/schema.prisma
 
       - name: Seed Reference Data (Statuses & Skills)
         run: |
