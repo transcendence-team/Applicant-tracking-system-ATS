@@ -1,0 +1,63 @@
+name: ATS Core Service CI
+
+on:
+  pull_request:
+    branches: [ "dev", "master" ]
+    # Adjust this path filter to match your exact ATS service directory (e.g., src/ats-core/**)
+    paths:
+      - '**'
+
+jobs:
+  test-ats-db:
+    runs-on: ubuntu-latest
+    
+    # ADD THIS BLOCK: Tell GitHub which folder contains your package.json
+    defaults:
+      run:
+        working-directory: src/ats-service
+
+    services:
+      postgres_db:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ats_admin
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: ats_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # 2. Inject environment variables required by the ATS service
+    env:
+      DATABASE_URL: postgresql://ats_admin:test_password@localhost:5432/ats_db
+      JWT_SECRET: github_actions_dummy_jwt_secret_256_bit_string
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      # 3. Prisma Workflow Execution
+      - name: Generate Custom Prisma Client
+        run: npx prisma generate --schema=../../src/postgres/ats-db/prisma/schema.prisma
+
+      - name: Apply Migrations to ats_db
+        run: npx prisma db push --schema=../postgres/ats-db/prisma/schema.prisma
+
+      - name: Seed Reference Data (Statuses & Skills)
+        run: |
+          npm install dotenv @prisma/adapter-pg pg @prisma/client --prefix ../postgres/ats-db
+          npx tsx ../postgres/ats-db/prisma/seed.ts
+      - name: Run ATS API Tests
+        run: npm test

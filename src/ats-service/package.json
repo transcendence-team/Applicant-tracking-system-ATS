@@ -8,12 +8,13 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test": "echo 'No tests implemented yet' && exit 0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "pg": "^8.13.0"
   },
   "devDependencies": {
