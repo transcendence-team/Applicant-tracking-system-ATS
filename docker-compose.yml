@@ -31,7 +31,7 @@ services:
         restart: true
 
   ats-api:
-    build: ./src/database
+    build: ./src/ats-service
     container_name: ats-api
     networks:
       - backend_net
@@ -39,7 +39,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./src/database:/app
+      - ./src/ats-service:/app
       - /app/node_modules
     depends_on:
       ats_db:
