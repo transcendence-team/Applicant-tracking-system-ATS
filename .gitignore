@@ -1,3 +1,4 @@
 .env
 CHECKLIST.md
 AUTH_SERVICE_CODE_GUIDE.md
+*.rest

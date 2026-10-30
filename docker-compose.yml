@@ -30,21 +30,21 @@ services:
         condition: service_healthy
         restart: true
 
-  ats-api:
-    build: ./src/database
-    container_name: ats-api
-    networks:
-      - backend_net
-      - frontend_net
-    env_file:
-      - .env
-    volumes:
-      - ./src/database:/app
-      - /app/node_modules
-    depends_on:
-      ats_db:
-        condition: service_healthy
-        restart: true
+  # ats-api:
+  #   build: ./src/database
+  #   container_name: ats-api
+  #   networks:
+  #     - backend_net
+  #     - frontend_net
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./src/database:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     ats_db:
+  #       condition: service_healthy
+  #       restart: true
 
   # ai-worker:
   #   build: ./src/ai-worker
