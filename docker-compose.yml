@@ -46,15 +46,39 @@ services:
   #       condition: service_healthy
   #       restart: true
 
-  # ai-worker:
-  #   build: ./src/ai-worker
-  #   container_name: ai-worker
-  #   networks: 
-  #     - backend_net
-  #   depends_on:
-  #     ats_db:
-  #       condition: service_healthy
-  #       restart: true
+  ai-worker:
+    build: ./src/ai-worker
+    container_name: ai-worker
+    restart: always
+    ports:
+      # [TESTING MODE]: Exposed so you can test POST /parse from host/curl/REST client.
+      # [FULL INTEGRATION]: Remove or comment out 'ports' so the AI worker remains
+      # private on 'backend_net' and only accessible internally by ats-api.
+      - "8000:8000"
+    volumes:
+      # Live reload: edits in ./src/ai-worker reflect immediately inside container
+      - ./src/ai-worker:/app
+      # ------------------------------------------------------------------------
+      # [FULL INTEGRATION STEP 1 - SHARED RESUME STORAGE]:
+      # When ats-api saves uploaded PDFs, mount the shared volume so ai-worker can read them:
+      # - resume_uploads:/app/uploads
+      # ------------------------------------------------------------------------
+    networks:
+      - backend_net
+    # --------------------------------------------------------------------------
+    # [FULL INTEGRATION STEP 2 - DATABASE & LLM INTEGRATION]:
+    # Uncomment when ai-worker is ready to read/write to PostgreSQL (ats_db)
+    # and communicate with the local Ollama LLM container:
+    #
+    # env_file:
+    #   - .env
+    # depends_on:
+    #   ats_db:
+    #     condition: service_healthy
+    #     restart: true
+    #   ollama:
+    #     condition: service_started
+    # --------------------------------------------------------------------------
 
 
   ats_db:

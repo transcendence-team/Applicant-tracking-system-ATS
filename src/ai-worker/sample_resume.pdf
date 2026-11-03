@@ -1,0 +1,62 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1415 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+50 740 Td
+(John Doe) Tj T*
+(Email: john.doe@example.com | Phone: +1-555-0199 | Location: San Francisco, CA) Tj T*
+(GitHub: github.com/johndoe | LinkedIn: linkedin.com/in/johndoe) Tj T*
+T*
+(PROFESSIONAL SUMMARY) Tj T*
+(Full-Stack Software Engineer with 4 years of experience building scalable backend microservices) Tj T*
+(and responsive React web applications. Proficient in Node.js, Python, PostgreSQL, and Docker.) Tj T*
+T*
+(TECHNICAL SKILLS) Tj T*
+(Languages: JavaScript, TypeScript, Python, SQL, Java) Tj T*
+(Frameworks & Tools: Node.js, Express, FastAPI, Next.js, React, Docker, Git) Tj T*
+(Databases: PostgreSQL, Redis, MongoDB) Tj T*
+(DevOps & Cloud: Docker Compose, Nginx, CI/CD, Linux) Tj T*
+T*
+(WORK EXPERIENCE) Tj T*
+(Software Engineer - Tech Solutions Inc. \(2022 - Present\)) Tj T*
+(- Designed and built RESTful APIs using Node.js and FastAPI handling 100k+ daily requests.) Tj T*
+(- Implemented automated background processing pipelines with PostgreSQL and Redis.) Tj T*
+(- Containerized legacy backend services with Docker and Docker Compose.) Tj T*
+T*
+(Junior Web Developer - Digital Agency \(2020 - 2022\)) Tj T*
+(- Developed responsive web portals using Next.js and Tailwind CSS.) Tj T*
+(- Optimized SQL queries and database schemas in PostgreSQL, improving query latency by 35%.) Tj T*
+T*
+(EDUCATION) Tj T*
+(B.S. in Computer Science - State University \(2016 - 2020\)) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001708 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1778
+%%EOF

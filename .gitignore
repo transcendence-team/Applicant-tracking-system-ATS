@@ -2,3 +2,10 @@
 CHECKLIST.md
 AUTH_SERVICE_CODE_GUIDE.md
 *.rest
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
