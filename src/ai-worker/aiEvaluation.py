@@ -101,6 +101,7 @@ def evaluate_candidate(
         result = _execute_llm_call(ollama_client, ollama_model, system_prompt, user_prompt)
         return result
     except Exception as ollama_err:
+        print(f"⚠️ [LLM] Ollama unavailable ({ollama_err}). Falling back to Cloud API...")
 
     cloud_client = get_cloud_client()
     cloud_model = os.getenv("LLM_MODEL", "qwen/qwen3.8-27b")

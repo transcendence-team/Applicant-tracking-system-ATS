@@ -67,6 +67,8 @@ services:
       - backend_net
     env_file:
       - .env
+    depends_on:
+      - ollama
     # depends_on:
     #   ats_db:
     #     condition: service_healthy
@@ -142,19 +144,15 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - backend_net
-
-  ollama-pull:
-    image: ollama/ollama:latest
-    container_name: ollama-pull
-    networks:
-      - backend_net
-    environment:
-      - OLLAMA_HOST=ollama:11434
-    depends_on:
-      - ollama
-    entrypoint: /bin/sh
-    command: "-c 'sleep 5 && ollama pull llama3.2:1b'"
-    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        /bin/ollama serve &
+        pid=$$!
+        sleep 5
+        echo "🔴 Verifying / pulling llama3.2:1b..."
+        ollama pull llama3.2:1b
+        wait $$pid
 
 networks:
   frontend_net:
