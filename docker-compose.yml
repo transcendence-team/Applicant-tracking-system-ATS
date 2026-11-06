@@ -67,15 +67,9 @@ services:
       - backend_net
     env_file:
       - .env
-    depends_on:
-      - ollama
     # depends_on:
-    #   ats_db:
-    #     condition: service_healthy
-    #     restart: true
-    #   ollama:
-    #     condition: service_started
-    # --------------------------------------------------------------------------
+    #   - ollama
+
 
 
   ats_db:

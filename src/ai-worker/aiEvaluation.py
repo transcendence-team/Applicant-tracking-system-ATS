@@ -93,15 +93,15 @@ def evaluate_candidate(
         resume_text=resume_text,
     )
 
-    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434/v1")
-    ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+    # ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434/v1")
+    # ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
 
-    try:
-        ollama_client = OpenAI(base_url=ollama_url, api_key="ollama", timeout=5.0)
-        result = _execute_llm_call(ollama_client, ollama_model, system_prompt, user_prompt)
-        return result
-    except Exception as ollama_err:
-        print(f"⚠️ [LLM] Ollama unavailable ({ollama_err}). Falling back to Cloud API...")
+    # try:
+    #     ollama_client = OpenAI(base_url=ollama_url, api_key="ollama", timeout=5.0)
+    #     result = _execute_llm_call(ollama_client, ollama_model, system_prompt, user_prompt)
+    #     return result
+    # except Exception as ollama_err:
+    #     print(f"⚠️ [LLM] Ollama unavailable ({ollama_err}). Falling back to Cloud API...")
 
     cloud_client = get_cloud_client()
     cloud_model = os.getenv("LLM_MODEL", "qwen/qwen3.8-27b")
