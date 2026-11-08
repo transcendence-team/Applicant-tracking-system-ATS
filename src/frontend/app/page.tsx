@@ -1,14 +1,45 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	function HandleSubmit(e: FormEvent<HTMLFormElement>) {
+
+	const router = useRouter();
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
+
+	// function HandleSubmit(e: FormEvent<HTMLFormElement>) {
+	// 	e.preventDefault();
+	// 	console.log(email, password);
+	// }
+
+	async function HandleSubmit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		console.log(email, password);
+		setLoading(true);
+		setError("");
+
+		try {
+			const res = await fetch("/api/session/login", {
+				method: "POST",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify({email, password}), });
+
+		if (!res.ok) {
+			const data = await res.json().catch(() => null);
+			setError(data?.message ?? "Login failed");
+			setLoading(false);
+			return;
+		}
+
+		router.push("/login");
+		} catch {
+			setError("Something went wrong. Please try again.");
+			setLoading(false);
+		}
 	}
 
 	return (
@@ -26,7 +57,8 @@ export default function Login() {
 							value={password} onChange={(e) => setPassword(e.target.value)}/>
 						<Link className="text-right text-sm" href="/forgot-password">Forget Password?</Link>
 						<button className="w-full h-14 rounded-[20px] bg-[#1A1A1A] text-white font-semibold text-xl cursor-pointer hover:bg-black"
-							type="submit">Login</button>
+							type="submit" disabled={loading}>Login</button>
+						{error && <p className="text-red-600 text-center">{error}</p>}
 					</form>
 					<p className="text-center mt-6">You don't have an account yet?{" "}
 					<Link href="/register" className="font-bold">Register</Link>
