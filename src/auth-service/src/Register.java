@@ -1,23 +1,25 @@
 package com.ats.auth;
 
+import com.ats.auth.AuthServiceApplication.ApiException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class RegisterController {
+@RequiredArgsConstructor
+public class Register {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    // Data structure & validation rules for POST /api/auth/register
     public record RegisterRequest(
             @NotBlank(message = "Email is required")
             @Email(message = "Invalid email format")
@@ -28,16 +30,12 @@ public class RegisterController {
             String password
     ) {}
 
-    public RegisterController(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
     @PostMapping("/api/auth/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public String register(@Valid @RequestBody RegisterRequest req) {
         String email = req.email().trim().toLowerCase();
         if (userRepository.existsByEmail(email)) {
-            return AuthServiceApplication.error(
+            throw new ApiException(
                     HttpStatus.CONFLICT,
                     "EMAIL_ALREADY_EXISTS",
                     "Email is already registered: " + email
@@ -45,10 +43,8 @@ public class RegisterController {
         }
 
         String hash = passwordEncoder.encode(req.password());
-        User user = new User(email, hash, "ROLE_APPLICANT");
-        userRepository.save(user);
+        userRepository.save(new User(email, hash, "ROLE_APPLICANT"));
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
+        return "User registered successfully";
     }
 }
-

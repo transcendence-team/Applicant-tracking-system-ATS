@@ -1,6 +1,9 @@
 package com.ats.auth;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -9,32 +12,31 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(updatable = false, nullable = false)
-    public UUID id;
+    private UUID id;
 
     @Column(unique = true, nullable = false, length = 150)
-    public String email;
+    private String email;
 
-    @Column(name = "password_hash", nullable = false)
-    public String passwordHash;
+    @Column(nullable = false)
+    private String passwordHash;
 
     @Column(nullable = false, length = 30)
-    public String role;
+    private String role;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    public LocalDateTime createdAt;
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
-    public LocalDateTime updatedAt;
-
-    // Default constructor required by JPA/Hibernate
-    public User() {}
+    private LocalDateTime updatedAt;
 
     public User(String email, String passwordHash, String role) {
         this.email = email;
@@ -42,4 +44,3 @@ public class User {
         this.role = role;
     }
 }
-

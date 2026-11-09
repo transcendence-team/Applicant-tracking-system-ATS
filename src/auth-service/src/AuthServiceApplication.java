@@ -1,5 +1,10 @@
 package com.ats.auth;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -8,28 +13,48 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Map;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 
 @SpringBootApplication
-@RestControllerAdvice // Applies the @ExceptionHandler methods below to all endpoint classes
+@RestControllerAdvice // Catches exceptions thrown by any endpoint and turns them into clean JSON
 public class AuthServiceApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(AuthServiceApplication.class, args);
     }
 
-    // Shared password hasher injected into RegisterController and LoginController
+    // Standard JSON error response returned whenever an ApiException or validation error occurs
+    public record ErrorResponse(String error, String message) {}
+
+    // Single lightweight exception used by endpoints to abort a request with an HTTP status & error code
+    public static class ApiException extends RuntimeException {
+        private final HttpStatus status;
+        private final String code;
+
+        public ApiException(HttpStatus status, String code, String message) {
+            super(message);
+            this.status = status;
+            this.code = code;
+        }
+    }
+
     @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // Disable Spring Security's default login screen so our endpoint classes handle routes directly
+    @Bean
+    public SecretKey jwtKey(@Value("${jwt.secret}") String secret) {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -38,21 +63,37 @@ public class AuthServiceApplication {
                 .build();
     }
 
-    // Shared helper to build standard {"error": "...", "message": "..."} responses
-    public static ResponseEntity<Map<String, String>> error(HttpStatus status, String code, String message) {
-        return ResponseEntity.status(status).body(Map.of("error", code, "message", message));
+    // Verifies the Bearer token and returns its Claims, or throws 401 UNAUTHORIZED automatically
+    public static Claims verifyToken(String authHeader, SecretKey jwtKey) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Missing or invalid token");
+        }
+        try {
+            String token = authHeader.substring(7);
+            return Jwts.parser()
+                    .verifyWith(jwtKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Missing or invalid token");
+        }
     }
 
-    // Shared handler when @Valid fails on any endpoint's request struct
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
+        return ResponseEntity.status(ex.status).body(new ErrorResponse(ex.code, ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().getFirst().getDefaultMessage();
-        return error(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("VALIDATION_FAILED", message));
     }
 
-    // Shared handler when request JSON is malformed
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, String>> handleMalformedJson() {
-        return error(HttpStatus.BAD_REQUEST, "MALFORMED_JSON", "Request body is invalid or malformed JSON");
+    public ResponseEntity<ErrorResponse> handleMalformedJson() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("MALFORMED_JSON", "Request body is invalid or malformed JSON"));
     }
 }
