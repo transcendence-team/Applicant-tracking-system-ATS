@@ -19,3 +19,7 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:7200000}
+
+admin:
+  email: ${ADMIN_EMAIL:admin@ats.com}
+  password: ${ADMIN_PASSWORD:admin123}

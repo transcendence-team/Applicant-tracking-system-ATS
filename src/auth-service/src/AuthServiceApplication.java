@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -61,6 +62,22 @@ public class AuthServiceApplication {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .build();
+    }
+
+    // Automatically seeds the initial ROLE_ADMIN user from .env on startup if it doesn't exist yet
+    @Bean
+    public CommandLineRunner seedAdminUser(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            @Value("${admin.email}") String adminEmail,
+            @Value("${admin.password}") String adminPassword) {
+        return args -> {
+            String email = adminEmail.trim().toLowerCase();
+            if (!userRepository.existsByEmail(email)) {
+                String hash = passwordEncoder.encode(adminPassword);
+                userRepository.save(new User(email, hash, "ROLE_ADMIN"));
+            }
+        };
     }
 
     // Verifies the Bearer token and returns its Claims, or throws 401 UNAUTHORIZED automatically
