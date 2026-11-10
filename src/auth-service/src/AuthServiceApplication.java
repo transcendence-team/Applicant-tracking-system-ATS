@@ -24,23 +24,22 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 
 @SpringBootApplication
-@RestControllerAdvice // Catches exceptions thrown by any endpoint and turns them into clean JSON
+@RestControllerAdvice //makes the following class an class catcher for all rest controllers
 public class AuthServiceApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(AuthServiceApplication.class, args);
     }
 
-    // Standard JSON error response returned whenever an ApiException or validation error occurs
     public record ErrorResponse(String error, String message) {}
 
-    // Single lightweight exception used by endpoints to abort a request with an HTTP status & error code
-    public static class ApiException extends RuntimeException {
+
+    public static class ApiException extends RuntimeException { //inherits so it can be thrown anywhere without throws 
         private final HttpStatus status;
         private final String code;
 
         public ApiException(HttpStatus status, String code, String message) {
-            super(message);
+            super(message); //passes nessage to parent class for it to provide ex.getMessage()
             this.status = status;
             this.code = code;
         }
@@ -64,7 +63,6 @@ public class AuthServiceApplication {
                 .build();
     }
 
-    // Automatically seeds the initial ROLE_ADMIN user from .env on startup if it doesn't exist yet
     @Bean
     public CommandLineRunner seedAdminUser(
             UserRepository userRepository,
@@ -80,7 +78,6 @@ public class AuthServiceApplication {
         };
     }
 
-    // Verifies the Bearer token and returns its Claims, or throws 401 UNAUTHORIZED automatically
     public static Claims verifyToken(String authHeader, SecretKey jwtKey) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Missing or invalid token");
