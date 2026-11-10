@@ -30,15 +30,6 @@
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
-	
-	  <!-- H2 in‑memory database – useful for development / quick “hello‑world” runs -->
-    <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <scope>runtime</scope>
-    </dependency> <!-- to remove -->
-
-
 	<!-- Java JWT (JJWT) Dependencies -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -110,6 +101,13 @@
 	</dependencies>
 
 	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<testSourceDirectory>test</testSourceDirectory>
+		<resources>
+			<resource>
+				<directory>src/resources</directory>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
