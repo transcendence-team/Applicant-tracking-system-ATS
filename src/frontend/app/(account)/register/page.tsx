@@ -45,7 +45,7 @@ export default function Register() {
 							placeholder="Email" type="email"
 							value={email} onChange={(e) => setEmail(e.target.value)}/>
 						<input className="w-full h-14 rounded-[20px] bg-[#F2F2F2] px-6"
-							placeholder="Password" type="password"
+							placeholder="Password" type="password" autoComplete="new-password"
 							value={password} onChange={(e) => setPassword(e.target.value)}/>
 						<button className="w-full h-14 rounded-[20px] bg-[#1A1A1A] text-white font-semibold text-xl cursor-pointer hover:bg-black"
 							type="submit" disabled={loading}>Register</button>

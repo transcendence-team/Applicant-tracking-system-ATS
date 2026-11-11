@@ -28,7 +28,7 @@ export default function Login() {
 				setLoading(false);
 				return; }
 
-			router.push("/login");
+			router.push("/dashboard");
 
 		} catch {
 			setError("Something went wrong. Please try again.");
