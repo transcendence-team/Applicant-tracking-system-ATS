@@ -1,5 +1,11 @@
-import Login from "./(account)/login/page";
+import {redirect} from "next/navigation";
 
 export default function Home() {
-	return (<Login/>);
+	redirect("/login");
 }
+
+// import Login from "./(account)/login/page";
+
+// export default function Home() {
+// 	return (<Login/>);
+// }
