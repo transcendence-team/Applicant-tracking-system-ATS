@@ -17,7 +17,7 @@ make frontend
 
 This copies the example env files if they are missing, starts the backend containers, installs the frontend dependencies and starts the dev server.
 
-### Or Manual steps
+### Manual steps
 
 ```bash
 cp .env.example .env                                   # root, only once
@@ -32,20 +32,16 @@ If if everything is perfect, open http://localhost:3000 in your browser.
 
 To stop: `Ctrl+C` stops the frontend only. Stop the containers with `docker compose down`.
 
-
-## Test account
-
-There is no register page yet. Create a test user through the API:
-
-```bash
-curl -k -i -X POST https://localhost/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "ayoub@gmail.com", "password": "pass123"}'
-```
-
 ## How login works
 
-1. The login page (`/login`) sends the email and password to our own route, `/api/session/login`.
-2. That route (`src/frontend/app/api/session/login/route.ts`) asks the auth service to log the user in.
+1. The login page (`/login`) sends the email and password to our own route, `/api/account/login`.
+2. That route (`src/frontend/app/api/account/login/route.ts`) asks the auth service to log the user in.
 3. On success, the JWT is stored in an HTTP-only cookie named `token` (2 hours, like the token). The browser's JavaScript never sees the token.
-4. The user is redirected for now to `/login`.
+4. The user is redirected to `/dashboard`.
+
+## How register works
+
+1. The register page (`/register`) sends the email and password to our own route, `/api/account/register`.
+2. That route (`src/frontend/app/api/account/register/route.ts`) asks the auth service to register the user.
+3. On success, we return a success response back to the caller.
+4. The user is redirected to `/login`.
