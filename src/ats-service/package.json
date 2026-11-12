@@ -9,6 +9,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
+    "dev": "tsx server.ts",
     "test": "echo 'No tests implemented yet' && exit 0"
   },
   "dependencies": {
