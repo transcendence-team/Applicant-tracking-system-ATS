@@ -8,13 +8,20 @@ services:
       - "443:443"
     networks:
       - frontend_net
+    depends_on:
+      - frontend
+      - auth-api
 
-  # frontend:
-  #   build: ./src/frontend
-  #   restart: always
-  #   container_name: frontend
-  #   networks:
-  #     - frontend_net
+  frontend:
+    build: ./src/frontend
+    restart: always
+    container_name: frontend
+    env_file:
+      - .env
+    networks:
+      - frontend_net
+    depends_on:
+      - auth-api
 
   auth-api:
     build: ./src/auth-service

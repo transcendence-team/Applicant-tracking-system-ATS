@@ -5,32 +5,25 @@ The ATS frontend lives in `src/frontend`. It is built with Next.js (App Router),
 ## Requirements
 
 - Docker (with the Compose plugin)
-- Node.js 20
 
 ## Run it
 
-### Shortcut (from the project root)
+From the project root:
 
 ```bash
-make frontend
+make up
 ```
 
-This copies the example env files if they are missing, starts the backend containers, installs the frontend dependencies and starts the dev server.
-
-### Or Manual steps
+Or manually:
 
 ```bash
-cp .env.example .env                                   # root, only once
-cp src/frontend/.env.example src/frontend/.env.local   # only once
-docker compose up -d --build                           # backend: NGINX, auth service, databases
-cd src/frontend
-npm install
-npm run dev
+cp .env.example .env
+docker compose up -d --build
 ```
 
-If if everything is perfect, open http://localhost:3000 in your browser.
+Open https://localhost in your browser.
 
-To stop: `Ctrl+C` stops the frontend only. Stop the containers with `docker compose down`.
+To stop the containers: `make down` (or `docker compose down`).
 
 
 ## Test account
