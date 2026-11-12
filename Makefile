@@ -1,6 +1,6 @@
 COMPOSE      ?= docker compose
-ENV_FILE     := src/.env
-ENV_EXAMPLE  := src/.env.example
+ENV_FILE     := .env
+ENV_EXAMPLE  := .env.example
 ATS_DIR      := src/database
 
 DB_SERVICE   ?= postgres_db
@@ -22,6 +22,9 @@ export
         clean fclean re db-up db-init db-down db-status \
         db-check db-shell db-logs install db-generate \
         db-migrate db-deploy db-seed db-studio db-reset psql
+
+env:
+	@test -f .env || cp .env.example .env
 
 up: env ## Build and start all services
 	$(COMPOSE) up -d --build
