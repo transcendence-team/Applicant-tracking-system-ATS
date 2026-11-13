@@ -1,24 +1,20 @@
-FROM node:20-alpine AS build
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY . .
-RUN npm run build
-
+# Use a lightweight Node.js image specifically built for web apps
 FROM node:20-alpine
 
+# Set the working directory inside the container
 WORKDIR /app
 
-ENV NODE_ENV=production
+# Copy the package files first (to cache dependencies)
+COPY package*.json ./
 
-COPY --from=build /app/package.json /app/package-lock.json ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/next.config.ts ./next.config.ts
+# Install frontend dependencies
+RUN npm install
 
+# Copy all the Next.js source code into the container
+COPY . .
+
+# Expose Next.js default port
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+# Start the Next.js development server
+CMD ["npm", "run", "dev"]
