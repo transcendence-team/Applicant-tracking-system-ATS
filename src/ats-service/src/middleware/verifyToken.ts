@@ -30,7 +30,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
         next(); 
     } catch (error) {
         res.status(403).json({
-            error: 'INVALID_TOKEN',
+            error: 'FORBIDDEN',
             message: 'Invalid or expired token',
         });
     }
