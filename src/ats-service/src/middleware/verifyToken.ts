@@ -12,7 +12,10 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
     const token = authHeader && authHeader.split(' ')[1]; 
 
     if (!token) {
-        res.status(401).json({ error: 'Access Denied: No Token Provided' });
+        res.status(401).json({
+            error: 'UNAUTHORIZED',
+            message: 'Access denied: No token provided',
+        });
         return;
     }
 
@@ -26,6 +29,9 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
         // 4. Token is valid, proceed to the route controller
         next(); 
     } catch (error) {
-        res.status(403).json({ error: 'Invalid or Expired Token' });
+        res.status(403).json({
+            error: 'INVALID_TOKEN',
+            message: 'Invalid or expired token',
+        });
     }
 };
