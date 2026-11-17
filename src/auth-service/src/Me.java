@@ -4,9 +4,11 @@ import com.ats.auth.AuthServiceApplication.ApiException;
 import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.SecretKey;
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class Me {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final SecretKey jwtKey;
 
     public record AccountProfileResponse(
@@ -47,6 +50,9 @@ public class Me {
     }
 
     public record UpdateAccountRequest(
+            @NotBlank(message = "Password is required")
+            String password,
+
             @Email(message = "Invalid email format")
             String email,
 
@@ -55,6 +61,11 @@ public class Me {
 
             @Size(max = 100, message = "Last name must be at most 100 characters")
             String lastName
+    ) {}
+
+    public record DeleteAccountRequest(
+            @NotBlank(message = "Password is required")
+            String password
     ) {}
 
     @GetMapping("/api/auth/me")
@@ -81,6 +92,14 @@ public class Me {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found"));
 
+        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    "INVALID_CREDENTIALS",
+                    "Current password is incorrect"
+            );
+        }
+
         if (req.email() != null && !req.email().isBlank()) {
             String newEmail = req.email().trim().toLowerCase();
             if (!newEmail.equals(user.getEmail()) && userRepository.existsByEmail(newEmail)) {
@@ -103,15 +122,23 @@ public class Me {
     @DeleteMapping("/api/auth/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCurrentUser(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Valid @RequestBody DeleteAccountRequest req) {
 
         Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
         UUID userId = UUID.fromString(claims.getSubject());
 
-        if (!userRepository.existsById(userId)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found");
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found"));
+
+        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    "INVALID_CREDENTIALS",
+                    "Current password is incorrect"
+            );
         }
 
-        userRepository.deleteById(userId);
+        userRepository.delete(user);
     }
 }
