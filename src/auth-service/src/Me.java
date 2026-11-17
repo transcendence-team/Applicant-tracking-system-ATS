@@ -66,7 +66,6 @@ public class Me {
     }
 
     public record UpdateAccountRequest(
-            @NotBlank(message = "Password is required")
             String password,
 
             @Email(message = "Invalid email format")
@@ -131,20 +130,28 @@ public class Me {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found"));
 
-        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
-            throw new ApiException(
-                    HttpStatus.UNAUTHORIZED,
-                    "INVALID_CREDENTIALS",
-                    "Current password is incorrect"
-            );
-        }
-
         if (req.email() != null && !req.email().isBlank()) {
             String newEmail = req.email().trim().toLowerCase();
-            if (!newEmail.equals(user.getEmail()) && userRepository.existsByEmail(newEmail)) {
-                throw new ApiException(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "Email is already registered: " + newEmail);
+            if (!newEmail.equals(user.getEmail())) {
+                if (req.password() == null || req.password().isBlank()) {
+                    throw new ApiException(
+                            HttpStatus.BAD_REQUEST,
+                            "VALIDATION_FAILED",
+                            "Current password is required to change email"
+                    );
+                }
+                if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+                    throw new ApiException(
+                            HttpStatus.UNAUTHORIZED,
+                            "INVALID_CREDENTIALS",
+                            "Current password is incorrect"
+                    );
+                }
+                if (userRepository.existsByEmail(newEmail)) {
+                    throw new ApiException(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "Email is already registered: " + newEmail);
+                }
+                user.setEmail(newEmail);
             }
-            user.setEmail(newEmail);
         }
 
         if (req.firstName() != null) {
