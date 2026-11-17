@@ -64,19 +64,12 @@ public class Login {
         userRepository.save(user);
 
         long now = System.currentTimeMillis();
-        var builder = Jwts.builder()
+        String token = Jwts.builder()
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
-                .claim("role", user.getRole());
-
-        if (user.getFirstName() != null) {
-            builder.claim("firstName", user.getFirstName());
-        }
-        if (user.getLastName() != null) {
-            builder.claim("lastName", user.getLastName());
-        }
-
-        String token = builder
+                .claim("role", user.getRole())
+                .claim("firstName", user.getFirstName())
+                .claim("lastName", user.getLastName())
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + expirationMs))
                 .signWith(jwtPrivateKey, Jwts.SIG.RS256)

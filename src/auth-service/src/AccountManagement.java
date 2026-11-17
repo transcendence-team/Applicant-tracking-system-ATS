@@ -1,7 +1,6 @@
 package com.ats.auth;
 
 import com.ats.auth.AuthServiceApplication.ApiException;
-import com.ats.auth.Me.AccountProfileResponse;
 import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
@@ -40,16 +39,14 @@ public class AccountManagement {
     }
 
     @GetMapping("/api/auth/users")
-    public List<AccountProfileResponse> listUsers(
+    public List<User> listUsers(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         requireAdmin(authHeader);
-        return userRepository.findAll().stream()
-                .map(AccountProfileResponse::from)
-                .toList();
+        return userRepository.findAll();
     }
 
     @GetMapping("/api/auth/users/{id}")
-    public AccountProfileResponse getUserById(
+    public User getUserById(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable UUID id) {
         Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
@@ -60,49 +57,46 @@ public class AccountManagement {
             throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Insufficient permissions to view this user");
         }
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found"));
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found");
+        }
 
-        return AccountProfileResponse.from(user);
+        return user;
     }
 
     @PatchMapping("/api/auth/users/{id}")
-    public AccountProfileResponse updateUserAccount(
+    public User updateUserAccount(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable UUID id,
             @Valid @RequestBody AdminUpdateUserRequest req) {
         requireAdmin(authHeader);
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found"));
-
-        if (req.role() != null) {
-            user.setRole(req.role());
-        }
-        if (req.active() != null) {
-            user.setActive(req.active());
-        }
-        if (req.department() != null) {
-            user.setDepartment(req.department().trim());
-        }
-        if (req.jobTitle() != null) {
-            user.setJobTitle(req.jobTitle().trim());
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found");
         }
 
-        return AccountProfileResponse.from(userRepository.save(user));
+        if (req.role() != null) user.setRole(req.role());
+        if (req.active() != null) user.setActive(req.active());
+        if (req.department() != null) user.setDepartment(req.department().trim());
+        if (req.jobTitle() != null) user.setJobTitle(req.jobTitle().trim());
+
+        return userRepository.save(user);
     }
 
     @DeleteMapping("/api/auth/users/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUserAccount(
+    public String deleteUserAccount(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable UUID id) {
         requireAdmin(authHeader);
 
-        if (!userRepository.existsById(id)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found");
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found");
         }
 
-        userRepository.deleteById(id);
+        userRepository.delete(user);
+        return "User deleted successfully";
     }
 }

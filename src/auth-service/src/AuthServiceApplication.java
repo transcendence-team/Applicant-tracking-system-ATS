@@ -19,7 +19,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -54,35 +53,16 @@ public class AuthServiceApplication {
         return new BCryptPasswordEncoder();
     }
 
-    private static byte[] parseKeyBytes(String keyValue, String header, String footer) {
-        String resolved = keyValue.trim();
-        // If base64-encoded full PEM, decode it first
-        if (!resolved.contains("BEGIN ")) {
-            try {
-                String decoded = new String(Base64.getDecoder().decode(resolved), StandardCharsets.UTF_8);
-                if (decoded.contains("BEGIN ")) {
-                    resolved = decoded;
-                }
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        String cleanBase64 = resolved
-                .replace(header, "")
-                .replace(footer, "")
-                .replaceAll("\\s+", "");
-        return Base64.getDecoder().decode(cleanBase64);
+    @Bean
+    public PrivateKey jwtPrivateKey(@Value("${jwt.private-key}") String key) throws Exception {
+        byte[] bytes = Base64.getDecoder().decode(key);
+        return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(bytes));
     }
 
     @Bean
-    public PrivateKey jwtPrivateKey(@Value("${jwt.private-key}") String privateKeyStr) throws Exception {
-        byte[] keyBytes = parseKeyBytes(privateKeyStr, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
-        return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
-    }
-
-    @Bean
-    public PublicKey jwtPublicKey(@Value("${jwt.public-key}") String publicKeyStr) throws Exception {
-        byte[] keyBytes = parseKeyBytes(publicKeyStr, "-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----");
-        return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
+    public PublicKey jwtPublicKey(@Value("${jwt.public-key}") String key) throws Exception {
+        byte[] bytes = Base64.getDecoder().decode(key);
+        return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(bytes));
     }
 
     @Bean
