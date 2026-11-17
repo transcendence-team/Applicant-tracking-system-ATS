@@ -14,7 +14,7 @@ jobs:
     # ADD THIS BLOCK: Tell GitHub which folder contains your package.json
     defaults:
       run:
-        working-directory: src/ats-service
+        working-directory: src/postgres/ats-db
 
     services:
       postgres_db:
@@ -50,14 +50,25 @@ jobs:
 
       # 3. Prisma Workflow Execution
       - name: Generate Custom Prisma Client
-        run: npx prisma generate --schema=../../src/postgres/ats-db/prisma/schema.prisma
+        run: npm run prisma:generate
 
       - name: Apply Migrations to ats_db
-        run: npx prisma db push --schema=../postgres/ats-db/prisma/schema.prisma
+        run: npm run prisma:migrate:deploy
 
       - name: Seed Reference Data (Statuses & Skills)
         run: |
-          npm install dotenv @prisma/adapter-pg pg @prisma/client --prefix ../postgres/ats-db
-          npx tsx ../postgres/ats-db/prisma/seed.ts
+          npm run prisma:seed
+
+      - name: Install ATS API dependencies
+        working-directory: src/ats-service
+        run: npm ci
+
       - name: Run ATS API Tests
+        working-directory: src/ats-service
         run: npm test
+
+      - name: Test ATS API against PostgreSQL
+        working-directory: src/ats-service
+        env:
+          RUN_DATABASE_TESTS: '1'
+        run: npx tsx --test test/postgres.test.js

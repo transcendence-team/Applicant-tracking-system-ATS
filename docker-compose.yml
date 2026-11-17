@@ -2,6 +2,8 @@ services:
 
   nginx:
     build: ./src/nginx
+    volumes:
+      - ./src/test-ats-service:/usr/share/nginx/html/test-ats-service:ro
     restart: always 
     container_name: nginx
     ports:
@@ -11,6 +13,7 @@ services:
     depends_on:
       - frontend
       - auth-api
+      - ats-api
 
   frontend:
     build: ./src/frontend
@@ -38,20 +41,37 @@ services:
         restart: true
 
   ats-api:
-    build: ./src/ats-service
-    container_name: ats-api
-    networks:
-      - backend_net
-      - frontend_net
+    build:
+      context: .
+      dockerfile: src/ats-service/Dockerfile
+    restart: always
     env_file:
       - .env
+    environment:
+      PORT: 3000
+      AI_PARSE_URL: ${AI_PARSE_URL:-http://ai-worker:8000/parse}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-60000}
+      UPLOAD_DIR: /data/resumes
+    networks:
+      - frontend_net
+      - backend_net
     volumes:
-      - ./src/ats-service:/app
-      - /app/node_modules
+      - resume_data:/data/resumes
     depends_on:
       ats_db:
         condition: service_healthy
-        restart: true
+
+  ats-db-tools:
+    build: ./src/postgres/ats-db
+    profiles: ["database"]
+    env_file:
+      - .env
+    networks:
+      - backend_net
+    depends_on:
+      ats_db:
+        condition: service_healthy
+    command: ["sh", "-c", "npm run prisma:migrate:deploy && npm run prisma:seed"]
 
   # ai-worker:
   #   build: ./src/ai-worker
@@ -129,6 +149,7 @@ networks:
 volumes:
   auth_data:
   ats_data:
+  resume_data:
 
 
 # models:
