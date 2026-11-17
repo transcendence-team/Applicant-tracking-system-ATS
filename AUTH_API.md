@@ -222,9 +222,9 @@ curl -i -X GET http://localhost:8081/api/auth/me \
 
 ---
 
-## 5. Downstream Services Integration Guide (Node.js, Python, WebSockets)
+## 5. Downstream Services Integration Guide (Node.js / Express & WebSockets, Python)
 
-Because this is a decoupled microservices architecture, **downstream services (Core ATS, AI Worker, WebSocket service) DO NOT need to call `auth-service` to verify user requests.**
+Because this is a decoupled microservices architecture, **downstream services (Core ATS + WebSockets, AI Worker) DO NOT need to call `auth-service` to verify user requests.**
 
 Verification is completely **stateless**: every service has access to the shared `JWT_SECRET` environment variable and validates tokens locally.
 
@@ -249,7 +249,7 @@ When decoded, the `accessToken` contains the following claims:
 
 ---
 
-### 5.2 Verification in Node.js / Express (`core-api`, `ws-service`)
+### 5.2 Verification in Node.js / Express (`ats-api` & WebSockets)
 
 Install:
 ```bash
