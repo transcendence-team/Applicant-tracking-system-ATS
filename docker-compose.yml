@@ -31,7 +31,8 @@ services:
       AUTH_DB_NAME: ${AUTH_DB_NAME}
       AUTH_DB_USER: ${AUTH_DB_USER}
       AUTH_DB_PASS: ${AUTH_DB_PASS}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-7200000}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -51,7 +52,7 @@ services:
       - frontend_net
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
     volumes:
       - ./src/ats-service:/app
       - /app/node_modules

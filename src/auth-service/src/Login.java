@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.crypto.SecretKey;
+import java.security.PrivateKey;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -23,7 +23,7 @@ public class Login {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey jwtKey;
+    private final PrivateKey jwtPrivateKey;
 
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
@@ -79,7 +79,7 @@ public class Login {
         String token = builder
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + expirationMs))
-                .signWith(jwtKey)
+                .signWith(jwtPrivateKey, Jwts.SIG.RS256)
                 .compact();
 
         return new LoginResponse(token, "Bearer", expirationMs / 1000);

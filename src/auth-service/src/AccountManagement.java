@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import javax.crypto.SecretKey;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,7 +18,7 @@ import java.util.UUID;
 public class AccountManagement {
 
     private final UserRepository userRepository;
-    private final SecretKey jwtKey;
+    private final PublicKey jwtPublicKey;
 
     public record AdminUpdateUserRequest(
             @Pattern(
@@ -32,7 +32,7 @@ public class AccountManagement {
     ) {}
 
     private void requireAdmin(String authHeader) {
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
         String role = claims.get("role", String.class);
         if (!"ROLE_ADMIN".equals(role)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Admin privileges required");
@@ -52,7 +52,7 @@ public class AccountManagement {
     public AccountProfileResponse getUserById(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable UUID id) {
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
         String callerRole = claims.get("role", String.class);
         String callerSub = claims.getSubject();
 

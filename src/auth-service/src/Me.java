@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.crypto.SecretKey;
+import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -21,7 +21,7 @@ public class Me {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey jwtKey;
+    private final PublicKey jwtPublicKey;
 
     public record AccountProfileResponse(
             UUID id,
@@ -110,7 +110,7 @@ public class Me {
     public AccountProfileResponse getCurrentUser(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
         UUID userId = UUID.fromString(claims.getSubject());
 
         User user = userRepository.findById(userId)
@@ -124,7 +124,7 @@ public class Me {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Valid @RequestBody UpdateAccountRequest req) {
 
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
         UUID userId = UUID.fromString(claims.getSubject());
 
         User user = userRepository.findById(userId)
@@ -203,7 +203,7 @@ public class Me {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Valid @RequestBody DeleteAccountRequest req) {
 
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
         UUID userId = UUID.fromString(claims.getSubject());
 
         User user = userRepository.findById(userId)

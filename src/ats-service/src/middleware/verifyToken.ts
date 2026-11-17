@@ -16,6 +16,21 @@ export interface AuthRequest extends Request {
     user?: JwtPayload;
 }
 
+function resolvePublicKey(rawKey: string | undefined): string {
+    if (!rawKey) {
+        throw new Error('JWT_PUBLIC_KEY is not configured');
+    }
+    const trimmed = rawKey.trim();
+    if (trimmed.includes('BEGIN PUBLIC KEY')) {
+        return trimmed.replace(/\\n/g, '\n');
+    }
+    const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+    if (decoded.includes('BEGIN PUBLIC KEY')) {
+        return decoded;
+    }
+    return `-----BEGIN PUBLIC KEY-----\n${trimmed}\n-----END PUBLIC KEY-----`;
+}
+
 export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
     // 1. Extract the token from the Authorization header (Format: "Bearer <token>")
     const authHeader = req.headers['authorization'];
@@ -30,10 +45,11 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
     }
 
     try {
-        // 2. Verify the token using the exact same secret defined in Spring Boot's .env
-        const verified = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+        // 2. Verify the RS256 signature using only the RSA Public Key
+        const publicKey = resolvePublicKey(process.env.JWT_PUBLIC_KEY);
+        const verified = jwt.verify(token, publicKey, { algorithms: ['RS256'] }) as JwtPayload;
         
-        // 3. Attach the decoded payload (UUID, role) to the request object
+        // 3. Attach the decoded payload (UUID, role, name) to the request object
         req.user = verified; 
         
         // 4. Token is valid, proceed to the route controller

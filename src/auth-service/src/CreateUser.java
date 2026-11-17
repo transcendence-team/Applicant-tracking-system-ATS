@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.crypto.SecretKey;
+import java.security.PublicKey;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,7 +20,7 @@ public class CreateUser {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey jwtKey;
+    private final PublicKey jwtPublicKey;
 
     public record CreateUserRequest(
             @NotBlank(message = "First name is required")
@@ -53,7 +53,7 @@ public class CreateUser {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Valid @RequestBody CreateUserRequest req) {
 
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
 
         String callerRole = claims.get("role", String.class);
         if (!"ROLE_ADMIN".equals(callerRole)) {

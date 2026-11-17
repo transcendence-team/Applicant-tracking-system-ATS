@@ -3,7 +3,6 @@ package com.ats.auth;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -20,8 +19,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 @SpringBootApplication
 @RestControllerAdvice //makes the following class an class catcher for all rest controllers
@@ -50,9 +54,35 @@ public class AuthServiceApplication {
         return new BCryptPasswordEncoder();
     }
 
+    private static byte[] parseKeyBytes(String keyValue, String header, String footer) {
+        String resolved = keyValue.trim();
+        // If base64-encoded full PEM, decode it first
+        if (!resolved.contains("BEGIN ")) {
+            try {
+                String decoded = new String(Base64.getDecoder().decode(resolved), StandardCharsets.UTF_8);
+                if (decoded.contains("BEGIN ")) {
+                    resolved = decoded;
+                }
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        String cleanBase64 = resolved
+                .replace(header, "")
+                .replace(footer, "")
+                .replaceAll("\\s+", "");
+        return Base64.getDecoder().decode(cleanBase64);
+    }
+
     @Bean
-    public SecretKey jwtKey(@Value("${jwt.secret}") String secret) {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    public PrivateKey jwtPrivateKey(@Value("${jwt.private-key}") String privateKeyStr) throws Exception {
+        byte[] keyBytes = parseKeyBytes(privateKeyStr, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
+        return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+    }
+
+    @Bean
+    public PublicKey jwtPublicKey(@Value("${jwt.public-key}") String publicKeyStr) throws Exception {
+        byte[] keyBytes = parseKeyBytes(publicKeyStr, "-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----");
+        return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
     }
 
     @Bean
@@ -78,14 +108,14 @@ public class AuthServiceApplication {
         };
     }
 
-    public static Claims verifyToken(String authHeader, SecretKey jwtKey) {
+    public static Claims verifyToken(String authHeader, PublicKey jwtPublicKey) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Missing or invalid token");
         }
         try {
             String token = authHeader.substring(7);
             return Jwts.parser()
-                    .verifyWith(jwtKey)
+                    .verifyWith(jwtPublicKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
