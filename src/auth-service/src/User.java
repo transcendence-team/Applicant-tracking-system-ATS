@@ -31,10 +31,10 @@ public class User {
     @Column(nullable = false, length = 30)
     private String role;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String firstName;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String lastName;
 
     // Optional profile fields (populated later via PATCH /api/auth/me before applying)
@@ -62,7 +62,7 @@ public class User {
     @Column(length = 100)
     private String jobTitle;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean active = true;
 
     private LocalDateTime lastLoginAt;
