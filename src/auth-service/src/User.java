@@ -31,6 +31,17 @@ public class User {
     @Column(nullable = false, length = 30)
     private String role;
 
+    @Column(length = 100)
+    private String firstName;
+
+    @Column(length = 100)
+    private String lastName;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    private LocalDateTime lastLoginAt;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -42,5 +53,15 @@ public class User {
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
+        this.active = true;
+    }
+
+    public User(String email, String passwordHash, String role, String firstName, String lastName) {
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.active = true;
     }
 }

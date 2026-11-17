@@ -1,27 +1,117 @@
 package com.ats.auth;
 
+import com.ats.auth.AuthServiceApplication.ApiException;
 import io.jsonwebtoken.Claims;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.SecretKey;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 public class Me {
 
+    private final UserRepository userRepository;
     private final SecretKey jwtKey;
 
+    public record AccountProfileResponse(
+            UUID id,
+            String email,
+            String role,
+            String firstName,
+            String lastName,
+            boolean active,
+            LocalDateTime lastLoginAt,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
+        public static AccountProfileResponse from(User user) {
+            return new AccountProfileResponse(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.isActive(),
+                    user.getLastLoginAt(),
+                    user.getCreatedAt(),
+                    user.getUpdatedAt()
+            );
+        }
+    }
+
+    public record UpdateAccountRequest(
+            @Email(message = "Invalid email format")
+            String email,
+
+            @Size(max = 100, message = "First name must be at most 100 characters")
+            String firstName,
+
+            @Size(max = 100, message = "Last name must be at most 100 characters")
+            String lastName
+    ) {}
+
     @GetMapping("/api/auth/me")
-    public String getCurrentUser(
+    public AccountProfileResponse getCurrentUser(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
-        String email = claims.get("email", String.class);
-        String role = claims.get("role", String.class);
+        UUID userId = UUID.fromString(claims.getSubject());
 
-        return "Hello! You are authenticated as: " + email + " with role: [" + role + "]";
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found"));
+
+        return AccountProfileResponse.from(user);
+    }
+
+    @PatchMapping("/api/auth/me")
+    public AccountProfileResponse updateCurrentUser(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Valid @RequestBody UpdateAccountRequest req) {
+
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        UUID userId = UUID.fromString(claims.getSubject());
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found"));
+
+        if (req.email() != null && !req.email().isBlank()) {
+            String newEmail = req.email().trim().toLowerCase();
+            if (!newEmail.equals(user.getEmail()) && userRepository.existsByEmail(newEmail)) {
+                throw new ApiException(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "Email is already registered: " + newEmail);
+            }
+            user.setEmail(newEmail);
+        }
+
+        if (req.firstName() != null) {
+            user.setFirstName(req.firstName().trim());
+        }
+
+        if (req.lastName() != null) {
+            user.setLastName(req.lastName().trim());
+        }
+
+        return AccountProfileResponse.from(userRepository.save(user));
+    }
+
+    @DeleteMapping("/api/auth/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCurrentUser(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        UUID userId = UUID.fromString(claims.getSubject());
+
+        if (!userRepository.existsById(userId)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User account not found");
+        }
+
+        userRepository.deleteById(userId);
     }
 }

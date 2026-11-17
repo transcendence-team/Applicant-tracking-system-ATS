@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.crypto.SecretKey;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @RestController
@@ -51,11 +52,31 @@ public class Login {
             );
         }
 
+        if (!user.isActive()) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "ACCOUNT_DISABLED",
+                    "This user account has been disabled"
+            );
+        }
+
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
+
         long now = System.currentTimeMillis();
-        String token = Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
-                .claim("role", user.getRole())
+                .claim("role", user.getRole());
+
+        if (user.getFirstName() != null) {
+            builder.claim("firstName", user.getFirstName());
+        }
+        if (user.getLastName() != null) {
+            builder.claim("lastName", user.getLastName());
+        }
+
+        String token = builder
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + expirationMs))
                 .signWith(jwtKey)

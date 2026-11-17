@@ -36,7 +36,13 @@ public class CreateUser {
                 regexp = "ROLE_APPLICANT|ROLE_HR|ROLE_ADMIN",
                 message = "Role must be ROLE_APPLICANT, ROLE_HR, or ROLE_ADMIN"
             )
-            String role
+            String role,
+
+            @Size(max = 100, message = "First name must be at most 100 characters")
+            String firstName,
+
+            @Size(max = 100, message = "Last name must be at most 100 characters")
+            String lastName
     ) {}
 
     @PostMapping("/api/auth/create-user")
@@ -66,7 +72,9 @@ public class CreateUser {
         }
 
         String hash = passwordEncoder.encode(req.password());
-        userRepository.save(new User(email, hash, req.role()));
+        String firstName = req.firstName() != null ? req.firstName().trim() : null;
+        String lastName = req.lastName() != null ? req.lastName().trim() : null;
+        userRepository.save(new User(email, hash, req.role(), firstName, lastName));
 
         return "User created successfully with role: " + req.role();
     }
