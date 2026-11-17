@@ -31,11 +31,36 @@ public class User {
     @Column(nullable = false, length = 30)
     private String role;
 
-    @Column(length = 100)
+    @Column(nullable = false, length = 100)
     private String firstName;
 
-    @Column(length = 100)
+    @Column(nullable = false, length = 100)
     private String lastName;
+
+    // Optional profile fields (populated later via PATCH /api/auth/me before applying)
+    @Column(length = 50)
+    private String phone;
+
+    @Column(length = 150)
+    private String location;
+
+    @Column(length = 255)
+    private String linkedinUrl;
+
+    @Column(length = 255)
+    private String githubUrl;
+
+    @Column(length = 255)
+    private String portfolioUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    @Column(length = 100)
+    private String department;
+
+    @Column(length = 100)
+    private String jobTitle;
 
     @Column(nullable = false)
     private boolean active = true;
@@ -48,13 +73,6 @@ public class User {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    public User(String email, String passwordHash, String role) {
-        this.email = email;
-        this.passwordHash = passwordHash;
-        this.role = role;
-        this.active = true;
-    }
 
     public User(String email, String passwordHash, String role, String firstName, String lastName) {
         this.email = email;

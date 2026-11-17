@@ -21,19 +21,21 @@ public class Register {
     private final PasswordEncoder passwordEncoder;
 
     public record RegisterRequest(
+            @NotBlank(message = "First name is required")
+            @Size(max = 100, message = "First name must be at most 100 characters")
+            String firstName,
+
+            @NotBlank(message = "Last name is required")
+            @Size(max = 100, message = "Last name must be at most 100 characters")
+            String lastName,
+
             @NotBlank(message = "Email is required")
             @Email(message = "Invalid email format")
             String email,
 
             @NotBlank(message = "Password is required")
             @Size(min = 6, message = "Password must be at least 6 characters")
-            String password,
-
-            @Size(max = 100, message = "First name must be at most 100 characters")
-            String firstName,
-
-            @Size(max = 100, message = "Last name must be at most 100 characters")
-            String lastName
+            String password
     ) {}
 
     @PostMapping("/api/auth/register")
@@ -49,8 +51,8 @@ public class Register {
         }
 
         String hash = passwordEncoder.encode(req.password());
-        String firstName = req.firstName() != null ? req.firstName().trim() : null;
-        String lastName = req.lastName() != null ? req.lastName().trim() : null;
+        String firstName = req.firstName().trim();
+        String lastName = req.lastName().trim();
         userRepository.save(new User(email, hash, "ROLE_APPLICANT", firstName, lastName));
 
         return "User registered successfully";

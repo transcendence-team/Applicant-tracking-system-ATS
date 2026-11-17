@@ -29,6 +29,14 @@ public class Me {
             String role,
             String firstName,
             String lastName,
+            String phone,
+            String location,
+            String linkedinUrl,
+            String githubUrl,
+            String portfolioUrl,
+            String bio,
+            String department,
+            String jobTitle,
             boolean active,
             LocalDateTime lastLoginAt,
             LocalDateTime createdAt,
@@ -41,6 +49,14 @@ public class Me {
                     user.getRole(),
                     user.getFirstName(),
                     user.getLastName(),
+                    user.getPhone(),
+                    user.getLocation(),
+                    user.getLinkedinUrl(),
+                    user.getGithubUrl(),
+                    user.getPortfolioUrl(),
+                    user.getBio(),
+                    user.getDepartment(),
+                    user.getJobTitle(),
                     user.isActive(),
                     user.getLastLoginAt(),
                     user.getCreatedAt(),
@@ -60,7 +76,30 @@ public class Me {
             String firstName,
 
             @Size(max = 100, message = "Last name must be at most 100 characters")
-            String lastName
+            String lastName,
+
+            @Size(max = 50, message = "Phone must be at most 50 characters")
+            String phone,
+
+            @Size(max = 150, message = "Location must be at most 150 characters")
+            String location,
+
+            @Size(max = 255, message = "LinkedIn URL must be at most 255 characters")
+            String linkedinUrl,
+
+            @Size(max = 255, message = "GitHub URL must be at most 255 characters")
+            String githubUrl,
+
+            @Size(max = 255, message = "Portfolio URL must be at most 255 characters")
+            String portfolioUrl,
+
+            String bio,
+
+            @Size(max = 100, message = "Department must be at most 100 characters")
+            String department,
+
+            @Size(max = 100, message = "Job title must be at most 100 characters")
+            String jobTitle
     ) {}
 
     public record DeleteAccountRequest(
@@ -114,6 +153,38 @@ public class Me {
 
         if (req.lastName() != null) {
             user.setLastName(req.lastName().trim());
+        }
+
+        if (req.phone() != null) {
+            user.setPhone(req.phone().trim());
+        }
+
+        if (req.location() != null) {
+            user.setLocation(req.location().trim());
+        }
+
+        if (req.linkedinUrl() != null) {
+            user.setLinkedinUrl(req.linkedinUrl().trim());
+        }
+
+        if (req.githubUrl() != null) {
+            user.setGithubUrl(req.githubUrl().trim());
+        }
+
+        if (req.portfolioUrl() != null) {
+            user.setPortfolioUrl(req.portfolioUrl().trim());
+        }
+
+        if (req.bio() != null) {
+            user.setBio(req.bio().trim());
+        }
+
+        if (req.department() != null) {
+            user.setDepartment(req.department().trim());
+        }
+
+        if (req.jobTitle() != null) {
+            user.setJobTitle(req.jobTitle().trim());
         }
 
         return AccountProfileResponse.from(userRepository.save(user));

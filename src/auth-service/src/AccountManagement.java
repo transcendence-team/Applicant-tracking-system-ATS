@@ -26,7 +26,9 @@ public class AccountManagement {
                 message = "Role must be ROLE_APPLICANT, ROLE_HR, or ROLE_ADMIN"
             )
             String role,
-            Boolean active
+            Boolean active,
+            String department,
+            String jobTitle
     ) {}
 
     private void requireAdmin(String authHeader) {
@@ -79,6 +81,12 @@ public class AccountManagement {
         }
         if (req.active() != null) {
             user.setActive(req.active());
+        }
+        if (req.department() != null) {
+            user.setDepartment(req.department().trim());
+        }
+        if (req.jobTitle() != null) {
+            user.setJobTitle(req.jobTitle().trim());
         }
 
         return AccountProfileResponse.from(userRepository.save(user));

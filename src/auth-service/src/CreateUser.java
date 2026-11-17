@@ -23,6 +23,14 @@ public class CreateUser {
     private final SecretKey jwtKey;
 
     public record CreateUserRequest(
+            @NotBlank(message = "First name is required")
+            @Size(max = 100, message = "First name must be at most 100 characters")
+            String firstName,
+
+            @NotBlank(message = "Last name is required")
+            @Size(max = 100, message = "Last name must be at most 100 characters")
+            String lastName,
+
             @NotBlank(message = "Email is required")
             @Email(message = "Invalid email format")
             String email,
@@ -36,13 +44,7 @@ public class CreateUser {
                 regexp = "ROLE_APPLICANT|ROLE_HR|ROLE_ADMIN",
                 message = "Role must be ROLE_APPLICANT, ROLE_HR, or ROLE_ADMIN"
             )
-            String role,
-
-            @Size(max = 100, message = "First name must be at most 100 characters")
-            String firstName,
-
-            @Size(max = 100, message = "Last name must be at most 100 characters")
-            String lastName
+            String role
     ) {}
 
     @PostMapping("/api/auth/create-user")
@@ -72,8 +74,8 @@ public class CreateUser {
         }
 
         String hash = passwordEncoder.encode(req.password());
-        String firstName = req.firstName() != null ? req.firstName().trim() : null;
-        String lastName = req.lastName() != null ? req.lastName().trim() : null;
+        String firstName = req.firstName().trim();
+        String lastName = req.lastName().trim();
         userRepository.save(new User(email, hash, req.role(), firstName, lastName));
 
         return "User created successfully with role: " + req.role();

@@ -73,7 +73,7 @@ public class AuthServiceApplication {
             String email = adminEmail.trim().toLowerCase();
             if (!userRepository.existsByEmail(email)) {
                 String hash = passwordEncoder.encode(adminPassword);
-                userRepository.save(new User(email, hash, "ROLE_ADMIN"));
+                userRepository.save(new User(email, hash, "ROLE_ADMIN", "System", "Admin"));
             }
         };
     }
