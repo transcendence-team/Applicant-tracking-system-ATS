@@ -79,42 +79,6 @@ enum GdprRequestStatus {
   REJECTED
 }
 
-// ───────────────────────────── Profiles ─────────────────────────────
-
-model CandidateProfile {
-  id           Int      @id @default(autoincrement())
-  userId       String   @unique @map("user_id") @db.Uuid // auth_db.users.id
-  firstName    String?  @map("first_name")
-  lastName     String?  @map("last_name")
-  phone        String?
-  location     String?
-  linkedinUrl  String?  @map("linkedin_url")
-  githubUrl    String?  @map("github_url")
-  portfolioUrl String?  @map("portfolio_url")
-  bio          String?  @db.Text
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  resumes      Resume[]
-  applications Application[]
-
-  @@map("candidate_profiles")
-}
-
-model EmployeeProfile {
-  id         Int      @id @default(autoincrement())
-  userId     String   @unique @map("user_id") @db.Uuid // auth_db.users.id
-  firstName  String?  @map("first_name")
-  lastName   String?  @map("last_name")
-  phone      String?
-  department String?
-  jobTitle   String?  @map("job_title")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  @@map("employee_profiles")
-}
-
 // ───────────────────────────── Jobs ─────────────────────────────
 
 model Job {
@@ -196,7 +160,7 @@ model ApplicationStatus {
 
 model Resume {
   id               Int       @id @default(autoincrement())
-  candidateId      Int       @map("candidate_id")
+  userId           String    @map("user_id") @db.Uuid // auth_db.users.id
   originalFilename String    @map("original_filename")
   storagePath      String    @map("storage_path")
   mimeType         String    @map("mime_type")
@@ -205,12 +169,11 @@ model Resume {
   uploadedAt       DateTime  @default(now()) @map("uploaded_at")
   deletedAt        DateTime? @map("deleted_at") // soft delete
 
-  candidate    CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applications Application[]
   extraction   ResumeExtraction?
   aiAnalyses   AiAnalysis[]
 
-  @@index([candidateId])
+  @@index([userId])
   @@index([fileHash])
   @@map("resumes")
 }
@@ -218,7 +181,7 @@ model Resume {
 model Application {
   id          Int      @id @default(autoincrement())
   jobId       Int      @map("job_id")
-  candidateId Int      @map("candidate_id")
+  userId      String   @map("user_id") @db.Uuid // auth_db.users.id
   resumeId    Int?     @map("resume_id")
   statusId    Int      @map("status_id")
   coverLetter String?  @map("cover_letter") @db.Text
@@ -227,7 +190,6 @@ model Application {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   job       Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  candidate CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   resume    Resume?           @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   status    ApplicationStatus @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
@@ -235,9 +197,9 @@ model Application {
   aiAnalyses    AiAnalysis[]
   notifications Notification[]
 
-  @@unique([jobId, candidateId])
+  @@unique([jobId, userId])
   @@index([statusId])
-  @@index([candidateId])
+  @@index([userId])
   @@map("applications")
 }
 

@@ -15,8 +15,8 @@ app.get('/api/ats/health', (req: Request, res: Response) => {
 app.get('/api/ats/protected-test', verifyToken, (req: AuthRequest, res: Response) => {
     res.json({ 
         message: 'Gateway passed! Token verified successfully.', 
-        user_uuid: req.user.sub,
-        role: req.user.role
+        user_uuid: req.user?.sub,
+        role: req.user?.role
     });
 });
 

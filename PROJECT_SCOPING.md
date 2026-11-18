@@ -16,13 +16,13 @@ This project is an Enterprise Applicant Tracking System (ATS) designed to stream
 
 ### Core Web & Interaction (10 Points)
 * **Web Frameworks (Major - 2pts):** Utilizing frameworks on both frontend and backend: Next.js (React) for the Frontend UI (`UI`), Java (Spring Boot) for the IAM Auth Service (`IAM`), and Node.js (Express) for the Core ATS Service (`ATS`).
-* **Real-time Features (Major - 2pts):** Dedicated Real-Time WebSocket Service (`WS`, Socket.io) routed via NGINX (`/ws/`). Internal event triggers from the Core ATS broadcast live applicant and Kanban card updates to all active HR agents without a page refresh.
+* **Real-time Features (Major - 2pts):** Integrated Real-Time WebSocket Server (Socket.io inside `ats-api`) routed via NGINX (`/api/ats/ws`). Internal event triggers from the Core ATS broadcast live applicant and Kanban card updates to all active HR agents without a page refresh.
 * **Use an ORM for the Database (Minor - 1pt):** Utilizing **Spring Data JPA (Hibernate)** in the Java Spring Boot Auth Service to manage Users and Roles, and an ORM (Prisma) in the Node.js Core ATS Service for type-safe relational database management.
 * **Server-Side Rendering (Minor - 1pt):** Leveraging Next.js SSR on the Frontend UI for the public-facing "Job Board" pages (`GET /`) to ensure fast load times and SEO optimization.
 * **File Upload (Minor - 1pt):** A secure upload zone for candidates to submit PDF resumes via Core ATS, featuring client-side React validation and server-side file type/size validation before dispatching to the AI parser.
 * **Advanced Search (Minor - 1pt):** A search interface with drop-down filters (skill, date applied, status) and pagination to navigate high volumes of applicants.
 * **Reusable Components (Minor - 1pt):** A custom-made design system comprising at least 10 reusable UI components (buttons, modals, Kanban cards, dropdowns, badges, inputs) following a strict color palette and typography ruleset.
-* **Notification System (Minor - 1pt):** Triggering real-time in-app alerts (via the WebSocket service) to candidates and HR agents when an application stage updates (e.g., "Interview" or "Rejected").
+* **Notification System (Minor - 1pt):** Triggering real-time in-app alerts (via `ats-api` WebSockets) to candidates and HR agents when an application stage updates (e.g., "Interview" or "Rejected").
 
 ### User & Access Management (3 Points)
 * **Advanced Permissions System (Major - 2pts):** Strict Role-Based Access Control (RBAC) managed by the Spring Boot IAM Auth Service (`POST /api/auth/*`). Candidates view their own status, HR staff interact with the Kanban pipeline, and Admins manage users and roles.
@@ -33,7 +33,7 @@ This project is an Enterprise Applicant Tracking System (ATS) designed to stream
 
 ### DevOps & Infrastructure (4 Points)
 * **Backend as Microservices (Major - 2pts):** The architecture is split into loosely coupled, containerized services partitioned across two isolated Docker networks:
-  * `frontend_net`: NGINX API Gateway, Frontend UI (`UI`), IAM Auth Service (`IAM`), Core ATS Service (`ATS`), and Real-Time WS Service (`WS`).
+  * `frontend_net`: NGINX API Gateway, Frontend UI (`UI`), IAM Auth Service (`IAM`), and Core ATS Service with integrated WebSockets (`ATS`).
   * `backend_net`: AI Worker Service (`AI`), Ollama Engine (`LLM`), and PostgreSQL Database (`DB`).
 * **Monitoring System (Major - 2pts):** Prometheus collecting internal metrics from the microservices, visualized through a Grafana dashboard displaying real-time server health and API load.
 
