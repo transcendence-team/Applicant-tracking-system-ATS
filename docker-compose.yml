@@ -16,8 +16,8 @@ services:
     build: ./src/frontend
     restart: always
     container_name: frontend
-    env_file:
-      - .env
+    environment:
+      AUTH_API_URL: ${AUTH_API_URL:-http://auth-api:8080}
     networks:
       - frontend_net
     depends_on:
@@ -27,8 +27,15 @@ services:
     build: ./src/auth-service
     container_name: auth-api
     restart: always
-    env_file:
-      - .env
+    environment:
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASS: ${AUTH_DB_PASS}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-7200000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     networks:
       - frontend_net
       - backend_net
@@ -37,21 +44,22 @@ services:
         condition: service_healthy
         restart: true
 
-  # ats-api:
-  #   build: ./src/database
-  #   container_name: ats-api
-  #   networks:
-  #     - backend_net
-  #     - frontend_net
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./src/database:/app
-  #     - /app/node_modules
-  #   depends_on:
-  #     ats_db:
-  #       condition: service_healthy
-  #       restart: true
+  ats-api:
+    build: ./src/ats-service
+    container_name: ats-api
+    networks:
+      - backend_net
+      - frontend_net
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+    volumes:
+      - ./src/ats-service:/app
+      - /app/node_modules
+    depends_on:
+      ats_db:
+        condition: service_healthy
+        restart: true
 
   # ai-worker:
   #   build: ./src/ai-worker
@@ -125,8 +133,6 @@ networks:
     driver: bridge     
   backend_net:
     driver: bridge
-
-
 
 volumes:
   auth_data:

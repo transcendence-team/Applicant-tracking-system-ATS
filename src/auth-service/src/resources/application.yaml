@@ -3,9 +3,9 @@ spring:
     name: auth-service
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://auth_db:5432/${POSTGRES_AUTH_DB:${AUTH_DB_NAME:auth_service_db}}
-    username: ${POSTGRES_USER:${AUTH_DB_USER:auth_admin}}
-    password: ${POSTGRES_PASSWORD:${AUTH_DB_PASS:auth_password123}}
+    url: jdbc:postgresql://auth_db:5432/${AUTH_DB_NAME:auth_service_db}
+    username: ${AUTH_DB_USER:auth_admin}
+    password: ${AUTH_DB_PASS:auth_password123}
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,7 +17,8 @@ spring:
 # Since it didn't exist, Hibernate generated and executed the raw SQL DDL automatically:
 
 jwt:
-  secret: ${JWT_SECRET}
+  private-key: ${JWT_PRIVATE_KEY}
+  public-key: ${JWT_PUBLIC_KEY}
   expiration-ms: ${JWT_EXPIRATION_MS:7200000}
 
 admin:

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.crypto.SecretKey;
+import java.security.PublicKey;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,7 +21,7 @@ public class ChangePassword {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey jwtKey;
+    private final PublicKey jwtPublicKey;
 
     public record ChangePasswordRequest(
             @NotBlank(message = "Current password is required")
@@ -37,7 +37,7 @@ public class ChangePassword {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Valid @RequestBody ChangePasswordRequest req) {
 
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
 
         String email = claims.get("email", String.class);
         User user = userRepository.findByEmail(email);
