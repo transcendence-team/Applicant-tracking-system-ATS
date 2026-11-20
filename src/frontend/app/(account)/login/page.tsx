@@ -28,6 +28,9 @@ export default function Login() {
 				setLoading(false);
 				return; }
 
+			const data = await res.json();
+			document.cookie = `token=${data.accessToken}; path=/; max-age=7200; SameSite=Lax; Secure`;
+
 			router.push("/dashboard");
 
 		} catch {
