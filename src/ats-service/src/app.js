@@ -8,11 +8,11 @@ import { resumesRouter } from './resumes.js';
 import { candidatesRouter } from './candidates.js';
 import { applicationsRouter } from './applications.js';
 
-export function createApp({ prisma, jwtSecret, parseResume, uploadDir }) {
+export function createApp({ prisma, jwtPublicKey, parseResume, uploadDir }) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '128kb' }));
-  const auth = authenticateJwt(jwtSecret);
+  const auth = authenticateJwt(jwtPublicKey);
   app.get('/api/ats/health', async (req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'ok' });

@@ -4,22 +4,30 @@ import { ApiError } from './errors.js';
 
 const claims = z.object({
   sub: z.uuid(),
+  email: z.string().optional(),
   role: z.enum(['ROLE_APPLICANT', 'ROLE_HR', 'ROLE_ADMIN']),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
   exp: z.number(),
 });
 
-export function authenticateJwt(secret) {
-  if (!secret || Buffer.byteLength(secret, 'utf8') < 32) {
-    throw new Error('JWT_SECRET must contain at least 32 UTF-8 bytes.');
+function formatPublicKey(rawKey) {
+  if (!rawKey || typeof rawKey !== 'string' || !rawKey.trim()) {
+    throw new Error('JWT_PUBLIC_KEY is required.');
   }
-  // Spring JJWT chooses the HMAC algorithm from the signing key length.
-  const bytes = Buffer.byteLength(secret, 'utf8');
-  const algorithm = bytes >= 64 ? 'HS512' : bytes >= 48 ? 'HS384' : 'HS256';
+  const trimmed = rawKey.trim();
+  return trimmed.includes('BEGIN PUBLIC KEY')
+    ? trimmed
+    : `-----BEGIN PUBLIC KEY-----\n${trimmed}\n-----END PUBLIC KEY-----`;
+}
+
+export function authenticateJwt(jwtPublicKey) {
+  const publicKey = formatPublicKey(jwtPublicKey);
   return (req, res, next) => {
     const match = /^Bearer (\S+)$/i.exec(req.headers.authorization ?? '');
     if (!match) return next(new ApiError(401, 'UNAUTHORIZED', 'A Bearer token is required.'));
     try {
-      req.user = claims.parse(jwt.verify(match[1], secret, { algorithms: [algorithm] }));
+      req.user = claims.parse(jwt.verify(match[1], publicKey, { algorithms: ['RS256'] }));
       next();
     } catch {
       next(new ApiError(401, 'INVALID_TOKEN', 'Token is invalid or expired.'));
