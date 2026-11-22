@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "node scripts/prepare-schema.mjs && prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "test": "echo 'No tests implemented yet' && exit 0",
-    "dev": "tsx src/server.ts"  
+    "dev": "tsx src/server.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

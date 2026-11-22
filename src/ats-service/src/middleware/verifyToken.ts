@@ -19,7 +19,7 @@ export interface AuthRequest extends Request {
 export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
     // 1. Extract the token from the Authorization header (Format: "Bearer <token>")
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; 
+    const token = /^Bearer (\S+)$/i.exec(authHeader ?? '')?.[1];
 
     if (!token) {
         res.status(401).json({
