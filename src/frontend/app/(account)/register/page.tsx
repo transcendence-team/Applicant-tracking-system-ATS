@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 export default function Register() {
 
+	const [firstName, setFirstName] = useState("");
+	const [lastName, setLastName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ export default function Register() {
 		try {
 			const res = await fetch("/api/auth/register",
 				{ method: "POST", headers: {"Content-Type": "application/json"},
-				body: JSON.stringify({email, password}), });
+				body: JSON.stringify({firstName, lastName, email, password}), });
 
 			if (!res.ok) {
 				const data = await res.json();
@@ -39,11 +41,19 @@ export default function Register() {
 		<div>
 			<form className="flex flex-col gap-6" onSubmit={HandleSubmit}>
 				<h1 className="text-4xl text-center font-bold">Create Your Account!</h1>
+				<div className="flex gap-4">
+					<input className="w-full h-14 rounded-[20px] bg-[#EEEEEE] px-6"
+						placeholder="First Name" type="text" required
+						value={firstName} onChange={(e) => setFirstName(e.target.value)}/>
+					<input className="w-full h-14 rounded-[20px] bg-[#EEEEEE] px-6"
+						placeholder="Last Name" type="text" required
+						value={lastName} onChange={(e) => setLastName(e.target.value)}/>
+				</div>
 				<input className="w-full h-14 rounded-[20px] bg-[#EEEEEE] px-6"
-					placeholder="Email" type="email"
+					placeholder="Email" type="email" required
 					value={email} onChange={(e) => setEmail(e.target.value)}/>
 				<input className="w-full h-14 rounded-[20px] bg-[#EEEEEE] px-6"
-					placeholder="Password" type="password" autoComplete="new-password"
+					placeholder="Password" type="password" autoComplete="new-password" required
 					value={password} onChange={(e) => setPassword(e.target.value)}/>
 				<button className="w-full h-14 rounded-[20px] bg-[#1A1A1A] text-white font-semibold text-xl cursor-pointer hover:bg-black"
 					type="submit" disabled={loading}>Register</button>

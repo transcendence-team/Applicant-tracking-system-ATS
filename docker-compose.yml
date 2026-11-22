@@ -19,8 +19,8 @@ services:
     build: ./src/frontend
     restart: always
     container_name: frontend
-    env_file:
-      - .env
+    environment:
+      AUTH_API_URL: ${AUTH_API_URL:-http://auth-api:8080}
     networks:
       - frontend_net
     depends_on:
@@ -30,8 +30,15 @@ services:
     build: ./src/auth-service
     container_name: auth-api
     restart: always
-    env_file:
-      - .env
+    environment:
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASS: ${AUTH_DB_PASS}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-7200000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     networks:
       - frontend_net
       - backend_net
@@ -44,11 +51,12 @@ services:
     build:
       context: .
       dockerfile: src/ats-service/Dockerfile
+    container_name: ats-api
     restart: always
-    env_file:
-      - .env
     environment:
       PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       AI_PARSE_URL: ${AI_PARSE_URL:-http://ai-worker:8000/parse}
       AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-60000}
       UPLOAD_DIR: /data/resumes
@@ -60,12 +68,13 @@ services:
     depends_on:
       ats_db:
         condition: service_healthy
+        restart: true
 
   ats-db-tools:
     build: ./src/postgres/ats-db
     profiles: ["database"]
-    env_file:
-      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
     networks:
       - backend_net
     depends_on:

@@ -26,39 +26,6 @@ CREATE TYPE "GdprRequestType" AS ENUM ('EXPORT', 'DELETE');
 CREATE TYPE "GdprRequestStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'REJECTED');
 
 -- CreateTable
-CREATE TABLE "candidate_profiles" (
-    "id" SERIAL NOT NULL,
-    "user_id" UUID NOT NULL,
-    "first_name" TEXT,
-    "last_name" TEXT,
-    "phone" TEXT,
-    "location" TEXT,
-    "linkedin_url" TEXT,
-    "github_url" TEXT,
-    "portfolio_url" TEXT,
-    "bio" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "candidate_profiles_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "employee_profiles" (
-    "id" SERIAL NOT NULL,
-    "user_id" UUID NOT NULL,
-    "first_name" TEXT,
-    "last_name" TEXT,
-    "phone" TEXT,
-    "department" TEXT,
-    "job_title" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "employee_profiles_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "jobs" (
     "id" SERIAL NOT NULL,
     "created_by" UUID NOT NULL,
@@ -118,7 +85,7 @@ CREATE TABLE "application_statuses" (
 -- CreateTable
 CREATE TABLE "resumes" (
     "id" SERIAL NOT NULL,
-    "candidate_id" INTEGER NOT NULL,
+    "user_id" UUID NOT NULL,
     "original_filename" TEXT NOT NULL,
     "storage_path" TEXT NOT NULL,
     "mime_type" TEXT NOT NULL,
@@ -134,7 +101,7 @@ CREATE TABLE "resumes" (
 CREATE TABLE "applications" (
     "id" SERIAL NOT NULL,
     "job_id" INTEGER NOT NULL,
-    "candidate_id" INTEGER NOT NULL,
+    "user_id" UUID NOT NULL,
     "resume_id" INTEGER,
     "status_id" INTEGER NOT NULL,
     "cover_letter" TEXT,
@@ -255,12 +222,6 @@ CREATE TABLE "gdpr_requests" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "candidate_profiles_user_id_key" ON "candidate_profiles"("user_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "employee_profiles_user_id_key" ON "employee_profiles"("user_id");
-
--- CreateIndex
 CREATE INDEX "jobs_status_idx" ON "jobs"("status");
 
 -- CreateIndex
@@ -279,7 +240,7 @@ CREATE INDEX "job_skills_skill_id_idx" ON "job_skills"("skill_id");
 CREATE UNIQUE INDEX "application_statuses_name_key" ON "application_statuses"("name");
 
 -- CreateIndex
-CREATE INDEX "resumes_candidate_id_idx" ON "resumes"("candidate_id");
+CREATE INDEX "resumes_user_id_idx" ON "resumes"("user_id");
 
 -- CreateIndex
 CREATE INDEX "resumes_file_hash_idx" ON "resumes"("file_hash");
@@ -288,10 +249,10 @@ CREATE INDEX "resumes_file_hash_idx" ON "resumes"("file_hash");
 CREATE INDEX "applications_status_id_idx" ON "applications"("status_id");
 
 -- CreateIndex
-CREATE INDEX "applications_candidate_id_idx" ON "applications"("candidate_id");
+CREATE INDEX "applications_user_id_idx" ON "applications"("user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "applications_job_id_candidate_id_key" ON "applications"("job_id", "candidate_id");
+CREATE UNIQUE INDEX "applications_job_id_user_id_key" ON "applications"("job_id", "user_id");
 
 -- CreateIndex
 CREATE INDEX "application_status_history_application_id_idx" ON "application_status_history"("application_id");
@@ -336,13 +297,7 @@ ALTER TABLE "job_skills" ADD CONSTRAINT "job_skills_job_id_fkey" FOREIGN KEY ("j
 ALTER TABLE "job_skills" ADD CONSTRAINT "job_skills_skill_id_fkey" FOREIGN KEY ("skill_id") REFERENCES "skills"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "resumes" ADD CONSTRAINT "resumes_candidate_id_fkey" FOREIGN KEY ("candidate_id") REFERENCES "candidate_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "applications" ADD CONSTRAINT "applications_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "jobs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "applications" ADD CONSTRAINT "applications_candidate_id_fkey" FOREIGN KEY ("candidate_id") REFERENCES "candidate_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "applications" ADD CONSTRAINT "applications_resume_id_fkey" FOREIGN KEY ("resume_id") REFERENCES "resumes"("id") ON DELETE SET NULL ON UPDATE CASCADE;

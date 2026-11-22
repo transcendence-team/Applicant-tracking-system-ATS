@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.crypto.SecretKey;
+import java.security.PublicKey;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,9 +20,17 @@ public class CreateUser {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey jwtKey;
+    private final PublicKey jwtPublicKey;
 
     public record CreateUserRequest(
+            @NotBlank(message = "First name is required")
+            @Size(max = 100, message = "First name must be at most 100 characters")
+            String firstName,
+
+            @NotBlank(message = "Last name is required")
+            @Size(max = 100, message = "Last name must be at most 100 characters")
+            String lastName,
+
             @NotBlank(message = "Email is required")
             @Email(message = "Invalid email format")
             String email,
@@ -45,7 +53,7 @@ public class CreateUser {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Valid @RequestBody CreateUserRequest req) {
 
-        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtKey);
+        Claims claims = AuthServiceApplication.verifyToken(authHeader, jwtPublicKey);
 
         String callerRole = claims.get("role", String.class);
         if (!"ROLE_ADMIN".equals(callerRole)) {
@@ -66,7 +74,9 @@ public class CreateUser {
         }
 
         String hash = passwordEncoder.encode(req.password());
-        userRepository.save(new User(email, hash, req.role()));
+        String firstName = req.firstName().trim();
+        String lastName = req.lastName().trim();
+        userRepository.save(new User(email, hash, req.role(), firstName, lastName));
 
         return "User created successfully with role: " + req.role();
     }
