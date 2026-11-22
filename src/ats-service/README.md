@@ -24,7 +24,7 @@ The health endpoint checks PostgreSQL. M3's worker is not present in this reposi
 | PATCH | `/api/ats/jobs/:id` | HR creator or admin |
 | DELETE | `/api/ats/jobs/:id` | HR creator or admin |
 
-Writes require `Authorization: Bearer <accessToken>` from the Spring login endpoint. JWT subjects must be UUIDs. The middleware uses the same UTF-8 secret and key-length-dependent HMAC algorithm as Spring JJWT, and requires an expiration claim.
+Writes require `Authorization: Bearer <accessToken>` from the Spring login endpoint. JWT subjects must be UUIDs. The middleware verifies RS256 signatures using `JWT_PUBLIC_KEY` and requires an expiration claim.
 
 Example (set TOKEN to an HR/admin accessToken):
 
@@ -66,9 +66,9 @@ The API sends multipart `file` to `AI_PARSE_URL` (default `http://ai-worker:8000
 }
 ```
 
-`candidate` and nonempty `rawText` are required; candidate fields are optional. Additional allowed candidate fields: `linkedinUrl`, `githubUrl`, `portfolioUrl` (URLs). The parser cannot assign a user ID. Change `src/worker.js` when M3 confirms a different response shape.
+`rawText` is required; `candidate` and candidate fields are optional. Additional allowed candidate fields: `linkedinUrl`, `githubUrl`, `portfolioUrl` (URLs). The parser cannot assign a user ID. Change `src/worker.js` when M3 confirms a different response shape.
 
-After parsing succeeds, a transaction upserts the candidate using JWT `sub`, creates the resume metadata/hash and a COMPLETED extraction with its text. Parsed fields update the candidate profile. Response: 201 with `{ candidate, resume }`. No application or job matching record is created by this endpoint. Worker failures return 502, timeouts 504, and invalid uploads 400/413/415. Database failure rolls back records and removes the new PDF. A process crash between file creation and commit can leave an orphan file; periodic cleanup is a future operational task.
+After parsing succeeds, a transaction creates the resume metadata/hash linked to the JWT `sub` (`userId`) and a COMPLETED extraction with its text. Response: 201 with `{ candidate, resume }` (when `candidate` is returned by the parser). No application or job matching record is created by this endpoint. Worker failures return 502, timeouts 504, and invalid uploads 400/413/415. Database failure rolls back records and removes the new PDF. A process crash between file creation and commit can leave an orphan file; periodic cleanup is a future operational task.
 
 ## Tests
 

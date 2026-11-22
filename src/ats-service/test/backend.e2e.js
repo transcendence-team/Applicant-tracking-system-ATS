@@ -42,27 +42,24 @@ try {
   await request(live, '/health', 200);
   await request(auth, '/register', 400, { method: 'POST', body: { email: 'invalid', password: 'x' } });
   const email = `e2e-applicant-${run}@example.com`;
-  await request(auth, '/register', 201, { method: 'POST', body: { email, password } });
-  await request(auth, '/register', 409, { method: 'POST', body: { email, password } });
+  await request(auth, '/register', 201, { method: 'POST', body: { firstName: 'E2E', lastName: 'Applicant', email, password } });
+  await request(auth, '/register', 409, { method: 'POST', body: { firstName: 'E2E', lastName: 'Applicant', email, password } });
   await request(auth, '/login', 401, { method: 'POST', body: { email, password: 'wrong' } });
   const applicant = record(email, await login(email));
   await request(auth, '/me', 200, { token: applicant });
   await request(auth, '/me', 401);
-  await request(auth, '/create-user', 403, { token: applicant, method: 'POST', body: { email: `forbidden-${run}@example.com`, password, role: 'ROLE_HR' } });
-  const admin = await login(process.env.ADMIN_EMAIL ?? 'admin@ats.com', process.env.ADMIN_PASSWORD ?? 'admin123');
+  await request(auth, '/me', 200, { token: applicant, method: 'PATCH', body: { firstName: 'Integration', lastName: 'Applicant', location: 'Casablanca' } });
+  await request(auth, '/create-user', 403, { token: applicant, method: 'POST', body: { firstName: 'Forbidden', lastName: 'User', email: `forbidden-${run}@example.com`, password, role: 'ROLE_HR' } });
+  const admin = await login(process.env.ADMIN_EMAIL ?? 'admin@ats.com', process.env.ADMIN_PASSWORD ?? 'adminPassword123');
   const hrEmail = `e2e-hr-${run}@example.com`;
-  await request(auth, '/create-user', 201, { token: admin, method: 'POST', body: { email: hrEmail, password, role: 'ROLE_HR' } });
+  await request(auth, '/create-user', 201, { token: admin, method: 'POST', body: { firstName: 'E2E', lastName: 'HR', email: hrEmail, password, role: 'ROLE_HR' } });
   const hr = record(hrEmail, await login(hrEmail));
   const otherEmail = `e2e-other-${run}@example.com`;
-  await request(auth, '/register', 201, { method: 'POST', body: { email: otherEmail, password } });
+  await request(auth, '/register', 201, { method: 'POST', body: { firstName: 'Other', lastName: 'Applicant', email: otherEmail, password } });
   const other = record(otherEmail, await login(otherEmail));
-  await request(live, '/candidates/me', 401);
-  await request(live, '/candidates/me', 401, { token: 'invalid' });
-  await request(live, '/candidates/me', 403, { token: hr });
-  await request(live, '/candidates/me', 404, { token: applicant });
-  await request(live, '/candidates/me', 200, { token: applicant, method: 'PATCH', body: { firstName: 'Integration', lastName: 'Applicant' } });
-  await request(live, '/candidates/me', 200, { token: applicant });
-  await request(live, '/candidates/me', 400, { token: applicant, method: 'PATCH', body: { userId: randomUUID() } });
+  await request(live, '/applications', 401);
+  await request(live, '/applications', 401, { token: 'invalid' });
+  await request(live, '/applications', 403, { token: hr });
   await request(live, '/jobs', 403, { token: applicant, method: 'POST', body: { title: 'Forbidden' } });
   const job = await request(live, '/jobs', 201, { token: hr, method: 'POST', body: { title: `E2E ${run}`, status: 'OPEN' } });
   await request(live, '/jobs?page=1&limit=20', 200);
@@ -78,7 +75,7 @@ try {
   const realResponse = await fetch(`${live}/resumes`, { method: 'POST', headers: { Authorization: `Bearer ${applicant}` }, body: realPdf, signal: AbortSignal.timeout(65000) });
   console.log(`LIVE PARSER: ${realResponse.status} ${await realResponse.text()}`);
   // Isolate only the external parser: JWTs, HTTP handlers, disk and PostgreSQL stay real.
-  const app = createApp({ prisma, jwtSecret: process.env.JWT_SECRET, uploadDir, parseResume: async () => ({ candidate: { firstName: 'Integration' }, rawText: 'Backend test resume', parserVersion: 'e2e-stub' }) });
+  const app = createApp({ prisma, jwtPublicKey: process.env.JWT_PUBLIC_KEY, uploadDir, parseResume: async () => ({ candidate: { firstName: 'Integration' }, rawText: 'Backend test resume', parserVersion: 'e2e-stub' }) });
   server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   const isolated = `http://127.0.0.1:${server.address().port}/api/ats`;
@@ -105,9 +102,9 @@ try {
   console.log(`SUCCESS: ${checks} HTTP checks passed.`);
 } finally {
   if (server) await new Promise(resolve => server.close(resolve));
-  await prisma.application.deleteMany({ where: { candidate: { userId: { in: users } } } });
+  await prisma.application.deleteMany({ where: { userId: { in: users } } });
   await prisma.job.deleteMany({ where: { createdBy: { in: users } } });
-  await prisma.candidateProfile.deleteMany({ where: { userId: { in: users } } });
+  await prisma.resume.deleteMany({ where: { userId: { in: users } } });
   await prisma.$disconnect();
   await rm(uploadDir, { recursive: true, force: true });
   console.log('ATS test records cleaned. Created auth accounts:', accounts.join(', '));

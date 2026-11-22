@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { generateKeyPairSync } from 'node:crypto';
 import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -7,14 +8,18 @@ import jwt from 'jsonwebtoken';
 import { createApp } from '../src/app.js';
 import { createParser } from '../src/worker.js';
 
-const secret = 'test-secret-with-at-least-32-bytes';
+const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+});
 const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const otherId = 'f47ac10b-58cc-4372-a567-0e02b2c3d480';
-const token = (role = 'ROLE_HR', sub = userId) => jwt.sign({ role }, secret, { subject: sub, expiresIn: '1h' });
+const token = (role = 'ROLE_HR', sub = userId) => jwt.sign({ role }, privateKey, { algorithm: 'RS256', subject: sub, expiresIn: '1h' });
 
 async function fixture(t, { prisma = {}, parseResume = async () => ({ candidate: { firstName: 'Ada' }, rawText: 'Resume text' }) } = {}) {
   const uploadDir = await mkdtemp(path.join(tmpdir(), 'ats-test-'));
-  const app = createApp({ prisma, jwtSecret: secret, parseResume, uploadDir });
+  const app = createApp({ prisma, jwtPublicKey: publicKey, parseResume, uploadDir });
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   t.after(async () => {
@@ -39,7 +44,7 @@ test('job writes reject missing, invalid, expired, and applicant tokens', async 
     const route = method === 'POST' ? '/jobs' : '/jobs/1';
     assert.equal((await request(route, { method })).status, 401);
     assert.equal((await request(route, json(method, {}, 'invalid'))).status, 401);
-    assert.equal((await request(route, json(method, {}, jwt.sign({ role: 'ROLE_HR' }, secret, { subject: userId, expiresIn: -1 })))).status, 401);
+    assert.equal((await request(route, json(method, {}, jwt.sign({ role: 'ROLE_HR' }, privateKey, { algorithm: 'RS256', subject: userId, expiresIn: -1 })))).status, 401);
     assert.equal((await request(route, json(method, {}, token('ROLE_APPLICANT')))).status, 403);
   }
 });
@@ -81,16 +86,15 @@ test('jobs with applications cannot be deleted', async t => {
   assert.equal((await request('/jobs/1', { method: 'DELETE', headers: { Authorization: `Bearer ${token()}` } })).status, 409);
 });
 
-test('resume upload persists candidate identity, PDF and completed extraction', async t => {
-  let savedCandidate, savedResume;
+test('resume upload persists user identity, PDF and completed extraction', async t => {
+  let savedResume;
   const tx = {
-    candidateProfile: { upsert: async args => { savedCandidate = args; return { id: 7, ...args.create }; } },
-    resume: { create: async args => { savedResume = args.data; return { id: 8, candidateId: 7 }; } },
+    resume: { create: async args => { savedResume = args.data; return { id: 8, userId: args.data.userId }; } },
   };
   const { request, uploadDir } = await fixture(t, { prisma: { $transaction: fn => fn(tx) } });
   const response = await request('/resumes', pdf());
   assert.equal(response.status, 201);
-  assert.equal(savedCandidate.create.userId, userId);
+  assert.equal(savedResume.userId, userId);
   assert.equal(savedResume.extraction.create.status, 'COMPLETED');
   assert.equal(savedResume.extraction.create.rawText, 'Resume text');
   assert.equal((await readdir(uploadDir)).length, 1);
