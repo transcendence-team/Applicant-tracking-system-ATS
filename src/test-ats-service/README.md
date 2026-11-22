@@ -1,4 +1,4 @@
-# ATS service test frontend
+how # ATS service test frontend
 
 A local, buildless test interface. Its files all live in `src/test-ats-service`. Nginx serves the directory via a read-only mount. Requests use the existing same-origin auth and ATS routes; no CORS setup or manual token copying is needed.
 
