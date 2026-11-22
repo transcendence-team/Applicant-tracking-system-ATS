@@ -31,13 +31,8 @@ export function resumesRouter({ prisma, auth, parseResume, uploadDir }) {
     try {
       const result = await prisma.$transaction(async tx => {
         // The identity always comes from the signed token, never from worker output.
-        const candidate = await tx.candidateProfile.upsert({
-          where: { userId: req.user.sub },
-          create: { userId: req.user.sub, ...parsed.candidate },
-          update: parsed.candidate,
-        });
         const resume = await tx.resume.create({ data: {
-          candidateId: candidate.id,
+          userId: req.user.sub,
           originalFilename: file.originalname,
           storagePath: filename,
           mimeType: 'application/pdf',
@@ -48,8 +43,8 @@ export function resumesRouter({ prisma, auth, parseResume, uploadDir }) {
             parserVersion: parsed.parserVersion,
             status: 'COMPLETED', extractedAt: new Date(),
           } },
-        }, select: { id: true, candidateId: true, originalFilename: true, uploadedAt: true } });
-        return { candidate, resume };
+        }, select: { id: true, userId: true, originalFilename: true, uploadedAt: true } });
+        return { ...(parsed.candidate ? { candidate: parsed.candidate } : {}), resume };
       });
       res.status(201).json(result);
     } catch (error) {

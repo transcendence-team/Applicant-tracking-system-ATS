@@ -5,7 +5,6 @@ import { authenticateJwt } from './auth.js';
 import { ApiError } from './errors.js';
 import { jobsRouter } from './jobs.js';
 import { resumesRouter } from './resumes.js';
-import { candidatesRouter } from './candidates.js';
 import { applicationsRouter } from './applications.js';
 
 export function createApp({ prisma, jwtPublicKey, parseResume, uploadDir }) {
@@ -19,7 +18,6 @@ export function createApp({ prisma, jwtPublicKey, parseResume, uploadDir }) {
   });
   app.use('/api/ats/jobs', jobsRouter(prisma, auth));
   app.use('/api/ats/resumes', resumesRouter({ prisma, auth, parseResume, uploadDir }));
-  app.use('/api/ats/candidates', candidatesRouter(prisma, auth));
   app.use('/api/ats/applications', applicationsRouter(prisma, auth));
   app.use((req, res, next) => next(new ApiError(404, 'NOT_FOUND', 'Route not found.')));
   app.use((error, req, res, next) => {

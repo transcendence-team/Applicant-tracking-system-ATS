@@ -12,7 +12,7 @@ const profile = z.object({
   bio: z.string().max(100000).nullable().optional(),
 }).strict();
 const parsedResume = z.object({
-  candidate: profile,
+  candidate: profile.optional(),
   rawText: z.string().min(1).max(1000000),
   parserVersion: z.string().max(100).optional(),
 });

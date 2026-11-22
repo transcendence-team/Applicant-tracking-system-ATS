@@ -234,7 +234,7 @@ $('upload-form').addEventListener('submit', event => {
     const result = await api('/api/ats/resumes', { method: 'POST', body: form });
     event.target.reset();
     $('file-name').textContent = 'No file selected';
-    notice(`Resume #${result.resume.id} parsed and saved for candidate #${result.candidate.id}.`);
+    notice(`Resume #${result.resume.id} parsed and saved for user ${result.resume.userId}.`);
   });
 });
 action('Loading job board…', async () => { await loadJobs(); notice('Ready. Sign in to test protected actions.'); });
