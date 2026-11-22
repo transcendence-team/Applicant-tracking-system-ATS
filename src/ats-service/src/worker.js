@@ -1,18 +1,7 @@
 import { z } from 'zod';
 import { ApiError } from './errors.js';
 
-const profile = z.object({
-  firstName: z.string().max(250).nullable().optional(),
-  lastName: z.string().max(250).nullable().optional(),
-  phone: z.string().max(100).nullable().optional(),
-  location: z.string().max(500).nullable().optional(),
-  linkedinUrl: z.url().max(2000).nullable().optional(),
-  githubUrl: z.url().max(2000).nullable().optional(),
-  portfolioUrl: z.url().max(2000).nullable().optional(),
-  bio: z.string().max(100000).nullable().optional(),
-}).strict();
 const parsedResume = z.object({
-  candidate: profile.optional(),
   rawText: z.string().min(1).max(1000000),
   parserVersion: z.string().max(100).optional(),
 });

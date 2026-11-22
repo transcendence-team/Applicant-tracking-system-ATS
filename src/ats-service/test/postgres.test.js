@@ -18,7 +18,7 @@ test('HTTP jobs and resume upload persist to PostgreSQL', { skip: process.env.RU
   const applicantUserId = randomUUID();
   const uploadDir = await mkdtemp(path.join(tmpdir(), 'ats-postgres-'));
   const app = createApp({ prisma, jwtPublicKey: publicKey, uploadDir,
-    parseResume: async () => ({ candidate: { firstName: 'Integration', lastName: 'Test' }, rawText: 'Test resume content', parserVersion: 'test' }),
+    parseResume: async () => ({ rawText: 'Test resume content', parserVersion: 'test' }),
   });
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));

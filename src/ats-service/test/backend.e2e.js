@@ -75,7 +75,7 @@ try {
   const realResponse = await fetch(`${live}/resumes`, { method: 'POST', headers: { Authorization: `Bearer ${applicant}` }, body: realPdf, signal: AbortSignal.timeout(65000) });
   console.log(`LIVE PARSER: ${realResponse.status} ${await realResponse.text()}`);
   // Isolate only the external parser: JWTs, HTTP handlers, disk and PostgreSQL stay real.
-  const app = createApp({ prisma, jwtPublicKey: process.env.JWT_PUBLIC_KEY, uploadDir, parseResume: async () => ({ candidate: { firstName: 'Integration' }, rawText: 'Backend test resume', parserVersion: 'e2e-stub' }) });
+  const app = createApp({ prisma, jwtPublicKey: process.env.JWT_PUBLIC_KEY, uploadDir, parseResume: async () => ({ rawText: 'Backend test resume', parserVersion: 'e2e-stub' }) });
   server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   const isolated = `http://127.0.0.1:${server.address().port}/api/ats`;

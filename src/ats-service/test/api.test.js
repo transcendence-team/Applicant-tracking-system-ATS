@@ -17,7 +17,7 @@ const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const otherId = 'f47ac10b-58cc-4372-a567-0e02b2c3d480';
 const token = (role = 'ROLE_HR', sub = userId) => jwt.sign({ role }, privateKey, { algorithm: 'RS256', subject: sub, expiresIn: '1h' });
 
-async function fixture(t, { prisma = {}, parseResume = async () => ({ candidate: { firstName: 'Ada' }, rawText: 'Resume text' }) } = {}) {
+async function fixture(t, { prisma = {}, parseResume = async () => ({ rawText: 'Resume text' }) } = {}) {
   const uploadDir = await mkdtemp(path.join(tmpdir(), 'ats-test-'));
   const app = createApp({ prisma, jwtPublicKey: publicKey, parseResume, uploadDir });
   const server = app.listen(0, '127.0.0.1');
@@ -119,11 +119,11 @@ test('database failure cleans up stored PDF', async t => {
 test('worker client forwards multipart PDF and validates the JSON contract', async () => {
   const parse = createParser({ url: 'http://ai-worker:8000/parse', fetchImpl: async (url, options) => {
     assert.equal(url.pathname, '/parse');
-    assert.equal(options.headers.Authorization, 'Bearer candidate');
+    assert.equal(options.headers.Authorization, 'Bearer applicant');
     assert.equal(options.body.get('file').type, 'application/pdf');
-    return Response.json({ candidate: { firstName: 'Ada' }, rawText: 'Parsed PDF' });
+    return Response.json({ rawText: 'Parsed PDF', parserVersion: 'v1' });
   } });
-  assert.equal((await parse({ buffer: Buffer.from('%PDF-') }, 'Bearer candidate')).candidate.firstName, 'Ada');
+  assert.equal((await parse({ buffer: Buffer.from('%PDF-') }, 'Bearer applicant')).rawText, 'Parsed PDF');
   for (const response of [Response.json({ unexpected: true }), new Response('not JSON'), new Response('', { status: 500 })]) {
     const invalid = createParser({ url: 'http://ai-worker:8000/parse', fetchImpl: async () => response });
     await assert.rejects(invalid({ buffer: Buffer.from('%PDF-') }), error => error.status === 502);

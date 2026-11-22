@@ -54,21 +54,14 @@ The API sends multipart `file` to `AI_PARSE_URL` (default `http://ai-worker:8000
 
 ```json
 {
-  "candidate": {
-    "firstName": "Ada",
-    "lastName": "Lovelace",
-    "phone": "+212600000000",
-    "location": "Casablanca",
-    "bio": "Backend developer"
-  },
   "rawText": "Extracted resume text...",
   "parserVersion": "m3-v1"
 }
 ```
 
-`rawText` is required; `candidate` and candidate fields are optional. Additional allowed candidate fields: `linkedinUrl`, `githubUrl`, `portfolioUrl` (URLs). The parser cannot assign a user ID. Change `src/worker.js` when M3 confirms a different response shape.
+Nonempty `rawText` is required; `parserVersion` is optional. Change `src/worker.js` when M3 confirms a different response shape.
 
-After parsing succeeds, a transaction creates the resume metadata/hash linked to the JWT `sub` (`userId`) and a COMPLETED extraction with its text. Response: 201 with `{ candidate, resume }` (when `candidate` is returned by the parser). No application or job matching record is created by this endpoint. Worker failures return 502, timeouts 504, and invalid uploads 400/413/415. Database failure rolls back records and removes the new PDF. A process crash between file creation and commit can leave an orphan file; periodic cleanup is a future operational task.
+After parsing succeeds, a transaction creates the resume metadata/hash linked to the JWT `sub` (`userId`) and a COMPLETED extraction with its text. Response: 201 with `{ resume }`. No application or job matching record is created by this endpoint. Worker failures return 502, timeouts 504, and invalid uploads 400/413/415. Database failure rolls back records and removes the new PDF. A process crash between file creation and commit can leave an orphan file; periodic cleanup is a future operational task.
 
 ## Tests
 

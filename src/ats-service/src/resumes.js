@@ -44,7 +44,7 @@ export function resumesRouter({ prisma, auth, parseResume, uploadDir }) {
             status: 'COMPLETED', extractedAt: new Date(),
           } },
         }, select: { id: true, userId: true, originalFilename: true, uploadedAt: true } });
-        return { ...(parsed.candidate ? { candidate: parsed.candidate } : {}), resume };
+        return { resume };
       });
       res.status(201).json(result);
     } catch (error) {

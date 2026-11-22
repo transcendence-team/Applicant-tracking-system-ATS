@@ -4,10 +4,7 @@ import { ApiError } from './errors.js';
 
 const claims = z.object({
   sub: z.uuid(),
-  email: z.string().optional(),
   role: z.enum(['ROLE_APPLICANT', 'ROLE_HR', 'ROLE_ADMIN']),
-  firstName: z.string().nullable().optional(),
-  lastName: z.string().nullable().optional(),
   exp: z.number(),
 });
 

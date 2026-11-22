@@ -184,7 +184,7 @@ $('register').addEventListener('click', () => {
   const form = $('login-form');
   if (!form.reportValidity()) return;
   action('Creating applicant account…', async () => {
-    await api('/api/auth/register', { method: 'POST', publicRequest: true, body: { email: form.elements.email.value, password: form.elements.password.value } });
+    await api('/api/auth/register', { method: 'POST', publicRequest: true, body: { firstName: 'Test', lastName: 'Applicant', email: form.elements.email.value, password: form.elements.password.value } });
     notice('Applicant account created. Click Sign in with the same credentials.');
   });
 });
