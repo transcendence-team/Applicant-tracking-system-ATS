@@ -7,6 +7,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { prisma } from '../../postgres/ats-db/src/prisma.ts';
 import { createApp } from '../src/app.js';
+import { createParser } from '../src/worker.js';
+import { resumePdf } from './resume-fixture.js';
 
 const run = Date.now();
 const password = `Test-${randomUUID()}!`;
@@ -69,18 +71,14 @@ try {
   const invalidPdf = new FormData();
   invalidPdf.append('file', new Blob(['not a PDF'], { type: 'application/pdf' }), 'invalid.pdf');
   await request(live, '/resumes', 400, { token: applicant, method: 'POST', form: invalidPdf });
-  // Exercise the real configured parser separately; absence is an external dependency.
-  const realPdf = new FormData();
-  realPdf.append('file', new Blob(['%PDF-1.7\nE2E fixture'], { type: 'application/pdf' }), 'fixture.pdf');
-  const realResponse = await fetch(`${live}/resumes`, { method: 'POST', headers: { Authorization: `Bearer ${applicant}` }, body: realPdf, signal: AbortSignal.timeout(65000) });
-  console.log(`LIVE PARSER: ${realResponse.status} ${await realResponse.text()}`);
-  // Isolate only the external parser: JWTs, HTTP handlers, disk and PostgreSQL stay real.
-  const app = createApp({ prisma, jwtPublicKey: process.env.JWT_PUBLIC_KEY, uploadDir, parseResume: async () => ({ rawText: 'Backend test resume', parserVersion: 'e2e-stub' }) });
+  // Use temporary file storage while exercising the configured parser and PostgreSQL.
+  const parseResume = createParser({ url: process.env.AI_PARSE_URL ?? 'http://ai-worker:8000/parse' });
+  const app = createApp({ prisma, jwtPublicKey: process.env.JWT_PUBLIC_KEY, uploadDir, parseResume });
   server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   const isolated = `http://127.0.0.1:${server.address().port}/api/ats`;
   const form = new FormData();
-  form.append('file', new Blob(['%PDF-1.7\nE2E fixture'], { type: 'application/pdf' }), 'fixture.pdf');
+  form.append('file', new Blob([resumePdf()], { type: 'application/pdf' }), 'fixture.pdf');
   const uploaded = await request(isolated, '/resumes', 201, { token: applicant, method: 'POST', form });
   const submission = { jobId: job.id, resumeId: uploaded.resume.id, coverLetter: 'E2E test' };
   await request(live, '/applications', 404, { token: other, method: 'POST', body: submission });

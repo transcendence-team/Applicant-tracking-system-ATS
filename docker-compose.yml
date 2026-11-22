@@ -69,6 +69,8 @@ services:
       ats_db:
         condition: service_healthy
         restart: true
+      ai-worker:
+        condition: service_started
 
   ats-db-tools:
     build: ./src/postgres/ats-db
@@ -82,15 +84,11 @@ services:
         condition: service_healthy
     command: ["sh", "-c", "npm run prisma:migrate:deploy && npm run prisma:seed"]
 
-  # ai-worker:
-  #   build: ./src/ai-worker
-  #   container_name: ai-worker
-  #   networks: 
-  #     - backend_net
-  #   depends_on:
-  #     ats_db:
-  #       condition: service_healthy
-  #       restart: true
+  ai-worker:
+    build: ./src/ai-worker
+    restart: always
+    networks:
+      - backend_net
 
 
   ats_db:

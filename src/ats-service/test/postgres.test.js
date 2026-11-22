@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import jwt from 'jsonwebtoken';
 import { createApp } from '../src/app.js';
+import { createParser } from '../src/worker.js';
+import { resumePdf } from './resume-fixture.js';
 
 test('HTTP jobs and resume upload persist to PostgreSQL', { skip: process.env.RUN_DATABASE_TESTS !== '1' }, async () => {
   const { prisma } = await import('../../postgres/ats-db/src/prisma.ts');
@@ -18,7 +20,7 @@ test('HTTP jobs and resume upload persist to PostgreSQL', { skip: process.env.RU
   const applicantUserId = randomUUID();
   const uploadDir = await mkdtemp(path.join(tmpdir(), 'ats-postgres-'));
   const app = createApp({ prisma, jwtPublicKey: publicKey, uploadDir,
-    parseResume: async () => ({ rawText: 'Test resume content', parserVersion: 'test' }),
+    parseResume: createParser({ url: process.env.AI_PARSE_URL ?? 'http://ai-worker:8000/parse' }),
   });
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
@@ -36,7 +38,7 @@ test('HTTP jobs and resume upload persist to PostgreSQL', { skip: process.env.RU
     assert.equal(updated.status, 200, await updated.clone().text());
     assert.equal((await updated.json()).title, 'Updated integration test');
     const form = new FormData();
-    form.append('file', new Blob(['%PDF-1.7\nTest document'], { type: 'application/pdf' }), 'test.pdf');
+    form.append('file', new Blob([resumePdf()], { type: 'application/pdf' }), 'test.pdf');
     const uploaded = await fetch(base + '/resumes', { method: 'POST', headers: { authorization: `Bearer ${jwt.sign({ role: 'ROLE_APPLICANT' }, privateKey, { algorithm: 'RS256', subject: applicantUserId, expiresIn: '5m' })}` }, body: form });
     assert.equal(uploaded.status, 201, await uploaded.clone().text());
     const result = await uploaded.json();
@@ -48,9 +50,12 @@ test('HTTP jobs and resume upload persist to PostgreSQL', { skip: process.env.RU
     assert.equal(await prisma.job.findUnique({ where: { id: jobId } }), null);
   } finally {
     await new Promise(resolve => server.close(resolve));
-    await prisma.job.deleteMany({ where: { createdBy: userId } });
-    await prisma.resume.deleteMany({ where: { userId: applicantUserId } });
-    await prisma.$disconnect();
-    await rm(uploadDir, { recursive: true, force: true });
+    try {
+      await prisma.job.deleteMany({ where: { createdBy: userId } });
+      await prisma.resume.deleteMany({ where: { userId: applicantUserId } });
+    } finally {
+      await prisma.$disconnect();
+      await rm(uploadDir, { recursive: true, force: true });
+    }
   }
 });

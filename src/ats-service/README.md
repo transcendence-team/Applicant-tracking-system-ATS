@@ -12,7 +12,9 @@ docker compose up --build -d ats-api nginx
 curl -k https://localhost/api/ats/health
 ```
 
-The health endpoint checks PostgreSQL. M3's worker is not present in this repository; uploads require that worker to be reachable on `backend_net`. Job endpoints work independently of the worker.
+The health endpoint checks PostgreSQL. Compose runs the FastAPI PDF parser on `backend_net`. The parser requires a PDF with an extractable text layer.
+
+The follow-up ATS migration backfills résumé and application user UUIDs from the old candidate profiles. On older databases it keeps the original candidate and employee profile rows in `ats_legacy_profiles` for a separate import into Auth. Auth's `users` table is the live source of profile fields.
 
 ## Jobs
 
@@ -50,16 +52,16 @@ Only ROLE_APPLICANT may upload. Exactly one multipart field named `file`, no ext
 
 The API sends multipart `file` to `AI_PARSE_URL` (default `http://ai-worker:8000/parse`) and forwards the candidate Bearer token. `AI_TIMEOUT_MS` defaults to 60000 (maximum 300000). The worker must accept that token or leave internal authentication to the Docker network.
 
-**Proposed response contract to coordinate with M3:**
+The bundled worker returns:
 
 ```json
 {
   "rawText": "Extracted resume text...",
-  "parserVersion": "m3-v1"
+  "parserVersion": "pypdf-v1"
 }
 ```
 
-Nonempty `rawText` is required; `parserVersion` is optional. Change `src/worker.js` when M3 confirms a different response shape.
+Nonempty `rawText` is required and `parserVersion` is optional.
 
 After parsing succeeds, a transaction creates the resume metadata/hash linked to the JWT `sub` (`userId`) and a COMPLETED extraction with its text. Response: 201 with `{ resume }`. No application or job matching record is created by this endpoint. Worker failures return 502, timeouts 504, and invalid uploads 400/413/415. Database failure rolls back records and removes the new PDF. A process crash between file creation and commit can leave an orphan file; periodic cleanup is a future operational task.
 
@@ -78,9 +80,8 @@ using the configured `ADMIN_EMAIL`/`ADMIN_PASSWORD` to provision HR. It checks
 real Spring JWTs, profiles, job CRUD, permissions, applications, duplicates and
 password changes. ATS test records and temporary upload files are removed;
 test auth accounts remain with randomly generated passwords. Use a local test
-database. The configured AI parser is probed separately; application and upload
-success paths use an isolated HTTP app with a controlled parser response and
-the real PostgreSQL database. A passing test does not certify the external parser.
+database. The upload uses the configured FastAPI worker, PostgreSQL, and
+temporary file storage.
 
 ```bash
 cd src/ats-service
@@ -96,4 +97,4 @@ Run the PostgreSQL integration test from the repository root after building the 
 docker compose run --rm -e RUN_DATABASE_TESTS=1 ats-api npx tsx --test test/postgres.test.js
 ```
 
-This creates temporary job/candidate/resume records, checks the saved data, and removes those records afterward. It uses a controlled parser response, so it does not require M3. The real M3 upload flow still needs an end-to-end check with the worker.
+This sends a valid PDF through FastAPI, verifies the saved résumé and extracted text in PostgreSQL, and removes the temporary records.
