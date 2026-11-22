@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATS Lab · Service testing</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./"><span class="mark">a.</span> ATS <span class="muted">/</span> <span class="brand-light">Lab</span></a><span class="environment"><span class="dot"></span> Local workspace</span></header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">DEVELOPER WORKSPACE</p><h1>Put your ATS to the test.</h1><p class="intro">Sign in, manage a posting, and send a resume through the pipeline.</p></div><button id="health" class="secondary">Check API connection ↗</button></div>
+    <div id="notice" class="notice" role="status" aria-live="polite">Ready. Sign in to test protected actions.</div>
+    <div class="workspace">
+      <aside>
+        <section class="panel account"><div class="section-label"><span>01 / ACCOUNT</span><span id="session-badge" class="badge">Signed out</span></div><h2>Your test session</h2><p class="hint">HR or admin for jobs. Applicant for resumes.</p>
+          <form id="login-form"><label>Email<input name="email" type="email" autocomplete="username" placeholder="you@example.com" required></label><label>Password<input name="password" type="password" autocomplete="current-password" placeholder="Your password" minlength="6" required></label><button type="submit" class="primary wide">Sign in →</button><button type="button" id="register" class="secondary wide">Create applicant account</button></form>
+          <div id="session" hidden><div class="avatar" aria-hidden="true">✓</div><strong id="session-email"></strong><p id="session-role" class="hint"></p><p class="hint">Your token stays in memory. Refreshing signs you out.</p><button id="logout" class="secondary wide">Sign out</button></div>
+        </section>
+        <section class="panel upload"><div class="section-label">02 / RESUME PIPELINE</div><h2>Try a resume</h2><p class="hint">Upload as an applicant to parse a PDF and save your resume extraction.</p><form id="upload-form"><label class="dropzone"> <span class="upload-symbol" aria-hidden="true">↑</span><strong>Choose a PDF</strong><span>One file · up to 10 MB</span><input name="file" id="pdf" type="file" accept=".pdf,application/pdf" required></label><p id="file-name" class="hint">No file selected</p><button id="upload-button" class="primary wide" type="submit" disabled>Upload & parse →</button></form><p class="small-note">Requires M3’s AI worker. A 502 response means the worker may be unavailable.</p></section>
+      </aside>
+      <div class="content">
+        <section class="panel"><div class="section-label">03 / JOB POSTINGS</div><div class="section-heading"><div><h2>Job board <span id="job-count" class="count">0</span></h2><p class="hint">The public API lists OPEN jobs. Drafts stay off this board.</p></div><button id="refresh" class="secondary">↻ Refresh</button></div><div id="job-list" class="job-list"><p class="empty">Loading job postings…</p></div><div class="pagination"><button id="previous" class="text-button" disabled>← Previous</button><span id="page-info">Page 1</span><button id="next" class="text-button" disabled>Next →</button></div></section>
+        <section class="panel editor"><div class="section-label">04 / CREATE & UPDATE</div><div class="section-heading"><h2 id="editor-title">Create a job posting</h2><button id="clear" class="text-button">Reset form</button></div><p class="hint">Use a saved job ID to edit a draft, closed, or archived posting.</p><form id="job-form"><div class="form-grid"><label>Job ID <span class="optional">for update / delete</span><input name="id" type="number" min="1" step="1" placeholder="Leave empty to create"></label><label>Title<input name="title" maxlength="250" placeholder="e.g. Backend Developer" required></label><label>Location<input name="location" maxlength="250" placeholder="e.g. Casablanca / Remote"></label><label>Employment type<select name="employmentType"><option value="">Not specified</option><option>FULL_TIME</option><option>PART_TIME</option><option>CONTRACT</option><option>INTERNSHIP</option><option>FREELANCE</option></select></label><label>Status<select name="status"><option>OPEN</option><option>DRAFT</option><option>CLOSED</option><option>ARCHIVED</option></select></label><label>Deadline<input name="deadline" type="datetime-local"></label><label>Minimum salary<input name="salaryMin" type="number" min="0" max="2147483647" step="1" placeholder="Optional"></label><label>Maximum salary<input name="salaryMax" type="number" min="0" max="2147483647" step="1" placeholder="Optional"></label></div><label>Description<textarea name="description" rows="4" placeholder="What will this person work on?"></textarea></label><div class="editor-actions"><button id="save-job" type="submit" class="primary" disabled>Create posting →</button><button id="delete-job" type="button" class="danger" disabled>Delete by ID</button><span id="permission-hint" class="hint">Sign in as HR or admin to make changes.</span></div></form></section>
+        <section class="panel response-panel"><div class="section-heading"><div><div class="section-label">REQUEST INSPECTOR</div><h2>See what happened</h2></div><span id="response-status" class="badge">No request</span></div><p id="request-label" class="hint">API responses appear here. Access tokens and passwords are hidden.</p><pre id="response" tabindex="0">Waiting for a request…</pre></section>
+      </div>
+    </div>
+    <footer>ATS Lab <span>Local testing interface · Actions change your real development database.</span></footer>
+  </main>
+</body>
+</html>
