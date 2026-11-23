@@ -1,7 +1,6 @@
 # ATS job postings
 
 Added job posting CRUD to the Express service with the existing Prisma job model and RS256 JWT middleware. The ATS service generates its client from the shared PostgreSQL schema. The service-specific Compose override mounts that schema read-only and keeps the generated client in the container.
-
 | Method | Route | Access |
 | --- | --- | --- |
 | GET | `/api/ats/jobs?page=1&limit=20` | Public open jobs. HR and admins can also read drafts, closed and archived jobs. |
@@ -15,7 +14,7 @@ Send the Auth access token in `Authorization: Bearer <token>` and JSON bodies wi
 From the repository root, with the ATS database schema applied and `DATABASE_URL` and `JWT_PUBLIC_KEY` configured:
 
 ```powershell
-docker compose -f docker-compose.yml -f src/ats-service/compose.jobs.yml up -d --build ats-api
+docker compose up -d --build ats-api
 ```
 
 The API is available to the existing gateway. For a local Node.js 22 run, install dependencies in `src/ats-service`, set `DATABASE_URL` and `JWT_PUBLIC_KEY` in that shell, then run `npm run prisma:generate` followed by `npm run dev`.
