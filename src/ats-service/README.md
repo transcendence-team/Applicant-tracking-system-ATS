@@ -1,6 +1,6 @@
 # ATS job postings
 
-Added job posting CRUD to the Express service with the existing Prisma job model and RS256 JWT middleware. The ATS service generates its client from the shared PostgreSQL schema. The service-specific Compose override mounts that schema read-only and keeps the generated client in the container.
+Added job posting CRUD to the Express service with the existing Prisma job model and RS256 JWT middleware. The ATS service generates its client from the shared PostgreSQL schema mounted read-only in `docker-compose.yml` and keeps the generated client in the container.
 | Method | Route | Access |
 | --- | --- | --- |
 | GET | `/api/ats/jobs?page=1&limit=20` | Public open jobs. HR and admins can also read drafts, closed and archived jobs. |
