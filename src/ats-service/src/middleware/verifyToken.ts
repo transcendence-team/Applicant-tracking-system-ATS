@@ -11,6 +11,7 @@ export interface JwtPayload {
     exp?: number;
 }
 
+
 // Extend the Express Request interface to include our decoded user payload
 export interface AuthRequest extends Request {
     user?: JwtPayload;
@@ -40,8 +41,8 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
         // 4. Token is valid, proceed to the route controller
         next(); 
     } catch (error) {
-        res.status(403).json({
-            error: 'FORBIDDEN',
+        res.status(401).json({
+            error: 'UNAUTHORIZED',
             message: 'Invalid or expired token',
         });
     }
