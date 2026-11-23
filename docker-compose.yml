@@ -11,6 +11,7 @@ services:
     depends_on:
       - frontend
       - auth-api
+      - ats-api
 
   frontend:
     build: ./src/frontend
@@ -61,7 +62,7 @@ services:
     tmpfs:
       - /app/prisma
       - /app/src/generated
-    command: ["sh", "-c", "npm run prisma:generate && exec npm run dev"]
+    command: ["sh", "-c", "npm run prisma:generate && npm run prisma:migrate:deploy && exec npm run dev"]
     depends_on:
       ats_db:
         condition: service_healthy
