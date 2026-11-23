@@ -11,6 +11,7 @@ services:
     depends_on:
       - frontend
       - auth-api
+      - ats-api
 
   frontend:
     build: ./src/frontend
@@ -53,9 +54,15 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      ATS_SCHEMA_PATH: /ats-schema/schema.prisma
     volumes:
       - ./src/ats-service:/app
+      - ./src/postgres/ats-db/prisma:/ats-schema:ro
       - /app/node_modules
+    tmpfs:
+      - /app/prisma
+      - /app/src/generated
+    command: ["sh", "-c", "npm run prisma:generate && npm run prisma:migrate:deploy && exec npm run dev"]
     depends_on:
       ats_db:
         condition: service_healthy
