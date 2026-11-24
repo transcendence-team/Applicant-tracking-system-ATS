@@ -1,20 +1,15 @@
 spring:
   application:
     name: auth-service
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://auth_db:5432/${AUTH_DB_NAME:auth_service_db}
-    username: ${AUTH_DB_USER:auth_admin}
-    password: ${AUTH_DB_PASS:auth_password123}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-
-#     When Spring Boot boots up, Hibernate scans all classes annotated with @Entity in com.ats.auth.
-# It finds User.java
-# It asks PostgreSQL: "Does a table named users exist in auth_db?"
-# Since it didn't exist, Hibernate generated and executed the raw SQL DDL automatically:
+  mongodb:
+    uri: mongodb://${AUTH_DB_USER}:${AUTH_DB_PASS}@auth_db:27017/${AUTH_DB_NAME}?authSource=admin
+    representation:
+      uuid: standard
+  data:
+    mongodb:
+      uri: mongodb://${AUTH_DB_USER}:${AUTH_DB_PASS}@auth_db:27017/${AUTH_DB_NAME}?authSource=admin
+      auto-index-creation: true
+      uuid-representation: standard
 
 jwt:
   private-key: ${JWT_PRIVATE_KEY}
@@ -22,5 +17,5 @@ jwt:
   expiration-ms: ${JWT_EXPIRATION_MS:7200000}
 
 admin:
-  email: ${ADMIN_EMAIL:admin@ats.com}
-  password: ${ADMIN_PASSWORD:admin123}
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}

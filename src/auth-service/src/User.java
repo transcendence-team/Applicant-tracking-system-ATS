@@ -1,87 +1,80 @@
 package com.ats.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.Persistable;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 @Getter
 @Setter
 @NoArgsConstructor
-public class User {
+public class User implements Persistable<UUID> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(updatable = false, nullable = false)
-    private UUID id;
+    private UUID id = UUID.randomUUID();
 
-    @Column(unique = true, nullable = false, length = 150)
+    @Indexed(unique = true)
     private String email;
 
     @JsonIgnore
-    @Column(nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false, length = 30)
     private String role;
 
-    @Column(length = 100)
     private String firstName;
 
-    @Column(length = 100)
     private String lastName;
 
     // Optional profile fields (populated later via PATCH /api/auth/me before applying)
-    @Column(length = 50)
     private String phone;
 
-    @Column(length = 150)
     private String location;
 
-    @Column(length = 255)
     private String linkedinUrl;
 
-    @Column(length = 255)
     private String githubUrl;
 
-    @Column(length = 255)
     private String portfolioUrl;
 
-    @Column(columnDefinition = "TEXT")
     private String bio;
 
-    @Column(length = 100)
     private String department;
 
-    @Column(length = 100)
     private String jobTitle;
 
-    @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean active = true;
 
     private LocalDateTime lastLoginAt;
 
-    @CreationTimestamp
-    @Column(updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
     public User(String email, String passwordHash, String role, String firstName, String lastName) {
+        this.id = UUID.randomUUID();
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
         this.firstName = firstName;
         this.lastName = lastName;
         this.active = true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isNew() {
+        return this.createdAt == null;
     }
 }

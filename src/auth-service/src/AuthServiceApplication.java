@@ -8,6 +8,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +28,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 @SpringBootApplication
+@EnableMongoAuditing
 @RestControllerAdvice //makes the following class an class catcher for all rest controllers
 public class AuthServiceApplication {
 
