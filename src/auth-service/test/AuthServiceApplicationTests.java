@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,21 +27,38 @@ class AuthServiceApplicationTests {
     @Autowired
     private UserRepository userRepository;
 
+    @Value("${admin.email}")
+    private String adminEmail;
+
+    @Value("${admin.password}")
+    private String adminPassword;
+
     private MockMvc mockMvc;
 
     private static String authToken;
+    private static String adminToken;
+    private static String candidateId;
+    private static String hrUserId;
 
     @BeforeEach
     void setUp() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
     }
 
+    private static String extractJsonField(String json, String field) {
+        return json.split("\"" + field + "\":\"")[1].split("\"")[0];
+    }
+
     @Test
     @Order(1)
     void registerSuccess() throws Exception {
-        User existing = userRepository.findByEmail("candidate@example.com");
-        if (existing != null) {
-            userRepository.delete(existing);
+        User existingCandidate = userRepository.findByEmail("candidate@example.com");
+        if (existingCandidate != null) {
+            userRepository.delete(existingCandidate);
+        }
+        User existingHr = userRepository.findByEmail("hr@example.com");
+        if (existingHr != null) {
+            userRepository.delete(existingHr);
         }
 
         mockMvc.perform(post("/api/auth/register")
@@ -124,8 +142,7 @@ class AuthServiceApplicationTests {
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andReturn();
 
-        String body = result.getResponse().getContentAsString();
-        authToken = body.split("\"accessToken\":\"")[1].split("\"")[0];
+        authToken = extractJsonField(result.getResponse().getContentAsString(), "accessToken");
     }
 
     @Test
@@ -160,14 +177,18 @@ class AuthServiceApplicationTests {
     @Test
     @Order(8)
     void getCurrentUserSuccess() throws Exception {
-        mockMvc.perform(get("/api/auth/me")
+        MvcResult result = mockMvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.email").value("candidate@example.com"))
                 .andExpect(jsonPath("$.firstName").value("Jane"))
                 .andExpect(jsonPath("$.lastName").value("Doe"))
                 .andExpect(jsonPath("$.role").value("ROLE_APPLICANT"))
-                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+                .andExpect(jsonPath("$.passwordHash").doesNotExist())
+                .andReturn();
+
+        candidateId = extractJsonField(result.getResponse().getContentAsString(), "id");
     }
 
     @Test
@@ -230,6 +251,204 @@ class AuthServiceApplicationTests {
 
     @Test
     @Order(13)
+    void changePasswordWrongCurrentPasswordReturns401() throws Exception {
+        mockMvc.perform(post("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "wrongCurrentPassword",
+                                  "newPassword": "newSecurePassword456"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"));
+    }
+
+    @Test
+    @Order(14)
+    void changePasswordSuccessAndRestore() throws Exception {
+        mockMvc.perform(post("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "securePassword123",
+                                  "newPassword": "newSecurePassword456"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Password changed successfully"));
+
+        // Verify login works with the new password and restore original password
+        mockMvc.perform(post("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "newSecurePassword456",
+                                  "newPassword": "securePassword123"
+                                }
+                                """))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @Order(15)
+    void adminLoginSuccess() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "%s",
+                                  "password": "%s"
+                                }
+                                """.formatted(adminEmail, adminPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andReturn();
+
+        adminToken = extractJsonField(result.getResponse().getContentAsString(), "accessToken");
+    }
+
+    @Test
+    @Order(16)
+    void createUserForbiddenForNonAdminReturns403() throws Exception {
+        mockMvc.perform(post("/api/auth/create-user")
+                        .header("Authorization", "Bearer " + authToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "firstName": "Bob",
+                                  "lastName": "Recruiter",
+                                  "email": "hr@example.com",
+                                  "password": "hrPassword123",
+                                  "role": "ROLE_HR"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+    }
+
+    @Test
+    @Order(17)
+    void createUserByAdminSuccess() throws Exception {
+        mockMvc.perform(post("/api/auth/create-user")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "firstName": "Bob",
+                                  "lastName": "Recruiter",
+                                  "email": "hr@example.com",
+                                  "password": "hrPassword123",
+                                  "role": "ROLE_HR"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(content().string("User created successfully with role: ROLE_HR"));
+
+        User hrUser = userRepository.findByEmail("hr@example.com");
+        hrUserId = hrUser.getId().toString();
+    }
+
+    @Test
+    @Order(18)
+    void listUsersForbiddenForNonAdminReturns403() throws Exception {
+        mockMvc.perform(get("/api/auth/users")
+                        .header("Authorization", "Bearer " + authToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+    }
+
+    @Test
+    @Order(19)
+    void listUsersByAdminSuccess() throws Exception {
+        mockMvc.perform(get("/api/auth/users")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].id").isNotEmpty());
+    }
+
+    @Test
+    @Order(20)
+    void getUserByIdSuccessForAdminAndSelf() throws Exception {
+        // Admin can view any user by ID
+        mockMvc.perform(get("/api/auth/users/" + hrUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("hr@example.com"))
+                .andExpect(jsonPath("$.role").value("ROLE_HR"));
+
+        // Applicant can view their own profile by ID
+        mockMvc.perform(get("/api/auth/users/" + candidateId)
+                        .header("Authorization", "Bearer " + authToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("candidate@example.com"));
+    }
+
+    @Test
+    @Order(21)
+    void getUserByIdForbiddenForOtherApplicantReturns403() throws Exception {
+        mockMvc.perform(get("/api/auth/users/" + hrUserId)
+                        .header("Authorization", "Bearer " + authToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+    }
+
+    @Test
+    @Order(22)
+    void getUserByIdNotFoundReturns404() throws Exception {
+        mockMvc.perform(get("/api/auth/users/00000000-0000-0000-0000-000000000000")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("USER_NOT_FOUND"));
+    }
+
+    @Test
+    @Order(23)
+    void updateUserAccountByAdminAndDisableCheck() throws Exception {
+        mockMvc.perform(patch("/api/auth/users/" + hrUserId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "role": "ROLE_HR",
+                                  "active": false,
+                                  "department": "Talent Acquisition",
+                                  "jobTitle": "Senior Recruiter"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(false))
+                .andExpect(jsonPath("$.department").value("Talent Acquisition"))
+                .andExpect(jsonPath("$.jobTitle").value("Senior Recruiter"));
+
+        // Verify disabled account cannot log in (403 ACCOUNT_DISABLED)
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "hr@example.com",
+                                  "password": "hrPassword123"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("ACCOUNT_DISABLED"));
+    }
+
+    @Test
+    @Order(24)
+    void deleteUserAccountByAdminSuccess() throws Exception {
+        mockMvc.perform(delete("/api/auth/users/" + hrUserId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User deleted successfully"));
+    }
+
+    @Test
+    @Order(25)
     void deleteCurrentUserAccount() throws Exception {
         mockMvc.perform(delete("/api/auth/me")
                         .header("Authorization", "Bearer " + authToken)
