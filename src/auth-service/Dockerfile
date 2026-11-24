@@ -9,8 +9,9 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code
+# Copy source code and tests
 COPY src ./src
+COPY test ./test
 
 # Package the application (skipping tests for speed)
 RUN mvn -B clean package -DskipTests
