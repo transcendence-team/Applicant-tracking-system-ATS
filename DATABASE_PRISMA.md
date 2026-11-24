@@ -1,6 +1,6 @@
 # Database Inspection & Prisma 7 Guide
 
-This guide explains how to inspect the two PostgreSQL 18 containers (`auth_db` and `ats_db`), verify tables and columns, and run Prisma 7 migrations and seeds.
+This guide explains how to inspect the two database containers (`auth_db` on MongoDB 8 and `ats_db` on PostgreSQL 18), verify collections/tables and fields, and run Prisma 7 migrations and seeds.
 
 Run all commands from the project root (the directory containing `docker-compose.yml`).
 
@@ -8,10 +8,10 @@ Run all commands from the project root (the directory containing `docker-compose
 
 ## 1. Database Architecture Overview
 
-| Container Name | Database Name (`POSTGRES_DB`) | User (`POSTGRES_USER`) | Owner Service | Purpose |
-| :--- | :--- | :--- | :--- | :--- |
-| `auth_db` | `auth_service_db` | `auth_admin` | `auth-api` (Spring Boot JPA) | Owns `users` (credentials, RBAC roles, and all user/candidate/employee profile fields) |
-| `ats_db` | `ats_core_db` | `ats_admin` | `ats-api` (Node.js / Prisma 7) | Owns 12 recruitment tables (`jobs`, `applications`, `resumes`, `skills`, `ai_analyses`, etc.) |
+| Container Name | Engine | Database Name | User | Owner Service | Purpose |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `auth_db` | MongoDB 8 (`mongo:8`) | `auth_service_db` (`MONGO_INITDB_DATABASE`) | `auth_admin` (`MONGO_INITDB_ROOT_USERNAME`) | `auth-api` (Spring Data MongoDB) | Owns `users` collection (credentials, RBAC roles, and all user/candidate/employee profile fields) |
+| `ats_db` | PostgreSQL 18 (`postgres:18-alpine`) | `ats_core_db` (`POSTGRES_DB`) | `ats_admin` (`POSTGRES_USER`) | `ats-api` (Node.js / Prisma 7) | Owns 12 recruitment tables (`jobs`, `applications`, `resumes`, `skills`, `ai_analyses`, etc.) |
 
 > **Ownership Rule:** `ats_db` never joins or declares foreign keys to `auth_db.users`. Every user reference in `ats_db` (`Application.userId`, `Resume.userId`, `Job.createdBy`, `JobRecruiter.userId`, `Notification.userId`, etc.) is a plain `@db.Uuid` column populated from the verified JWT `sub` claim.
 
@@ -23,30 +23,30 @@ Run all commands from the project root (the directory containing `docker-compose
 docker compose ps
 ```
 
-Check whether both PostgreSQL containers accept connections:
+Check whether both database containers accept connections:
 
 ```bash
-docker compose exec auth_db pg_isready -U auth_admin -d auth_service_db
+docker compose exec auth_db mongosh --quiet --eval "db.adminCommand('ping').ok"
 docker compose exec ats_db pg_isready -U ats_admin -d ats_core_db
 ```
 
 ---
 
-## 3. Inspect `auth_db` (Spring Boot Auth & User Service)
+## 3. Inspect `auth_db` (Spring Boot Auth & User Service — MongoDB)
 
-List tables in `auth_db`:
+List collections in `auth_db`:
 ```bash
-docker compose exec auth_db psql -U auth_admin -d auth_service_db -c '\dt'
+docker compose exec auth_db mongosh -u auth_admin -p auth_password123 --authenticationDatabase admin auth_service_db --quiet --eval "db.getCollectionNames()"
 ```
 
-Inspect the `users` table schema:
+View indexes on the `users` collection:
 ```bash
-docker compose exec auth_db psql -U auth_admin -d auth_service_db -c '\d "users"'
+docker compose exec auth_db mongosh -u auth_admin -p auth_password123 --authenticationDatabase admin auth_service_db --quiet --eval "db.users.getIndexes()"
 ```
 
 View registered users (excluding password hashes):
 ```bash
-docker compose exec auth_db psql -U auth_admin -d auth_service_db -c 'SELECT id, email, role, first_name, last_name, active, last_login_at FROM users;'
+docker compose exec auth_db mongosh -u auth_admin -p auth_password123 --authenticationDatabase admin auth_service_db --quiet --eval "db.users.find({}, { passwordHash: 0 }).pretty()"
 ```
 
 ---
@@ -73,19 +73,19 @@ docker compose exec ats_db psql -U ats_admin -d ats_core_db -c 'SELECT * FROM "s
 
 ---
 
-## 5. Interactive `psql` Shells
+## 5. Interactive Database Shells
 
-Open an interactive shell in `auth_db`:
+Open an interactive `mongosh` shell in `auth_db`:
 ```bash
-docker compose exec auth_db psql -U auth_admin -d auth_service_db
+docker compose exec auth_db mongosh -u auth_admin -p auth_password123 --authenticationDatabase admin auth_service_db
 ```
 
-Open an interactive shell in `ats_db`:
+Open an interactive `psql` shell in `ats_db`:
 ```bash
 docker compose exec ats_db psql -U ats_admin -d ats_core_db
 ```
 
-Useful commands inside `psql`:
+Useful commands inside `psql` (`ats_db`):
 | Command | Meaning |
 | :--- | :--- |
 | `\l` | List databases |

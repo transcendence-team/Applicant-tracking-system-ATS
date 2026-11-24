@@ -73,7 +73,7 @@ Per the 42 subject evaluation requirements, commit history must show clear, mean
   * Classes / Interfaces: `PascalCase` (e.g., `AuthController`, `UserService`, `UserRepository`).
   * Methods / Variables: `camelCase` (e.g., `generateJwtToken()`, `currentUser`).
   * Constants: `UPPER_SNAKE_CASE` (e.g., `MAX_TOKEN_VALIDITY`).
-* **Entity Management:** Manage persistence solely through Spring Data JPA / Hibernate annotations (`@Entity`, `@Table`, `@Id`).
+* **Document / Entity Management:** Manage persistence solely through Spring Data MongoDB annotations (`@Document`, `@Id`, `@Indexed`).
 
 ### 2.3 Node.js (Core ATS API & Real-Time WS)
 * **Linter & Formatter:** ESLint + Prettier.
