@@ -1,146 +1,109 @@
-# Database Inspection Guide
+# Database Inspection & Prisma 7 Guide
 
-This guide explains how to check PostgreSQL, verify that `auth_db` and `ats_db` exist, list their tables, inspect table columns, and view table data.
+This guide explains how to inspect the two PostgreSQL 18 containers (`auth_db` and `ats_db`), verify tables and columns, and run Prisma 7 migrations and seeds.
 
-Run all commands from the project root (the directory containing `docker-compose.yml` or `compose.yaml`).
+Run all commands from the project root (the directory containing `docker-compose.yml`).
 
-> **Note:** Replace `user` in the examples with the value of `POSTGRES_USER` in `src/.env` if it is different.
+---
 
-## 1. Check that the PostgreSQL container is running
+## 1. Database Architecture Overview
+
+| Container Name | Database Name (`POSTGRES_DB`) | User (`POSTGRES_USER`) | Owner Service | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `auth_db` | `auth_service_db` | `auth_admin` | `auth-api` (Spring Boot JPA) | Owns `users` (credentials, RBAC roles, and all user/candidate/employee profile fields) |
+| `ats_db` | `ats_core_db` | `ats_admin` | `ats-api` (Node.js / Prisma 7) | Owns 12 recruitment tables (`jobs`, `applications`, `resumes`, `skills`, `ai_analyses`, etc.) |
+
+> **Ownership Rule:** `ats_db` never joins or declares foreign keys to `auth_db.users`. Every user reference in `ats_db` (`Application.userId`, `Resume.userId`, `Job.createdBy`, `JobRecruiter.userId`, `Notification.userId`, etc.) is a plain `@db.Uuid` column populated from the verified JWT `sub` claim.
+
+---
+
+## 2. Check Container Status & Readiness
 
 ```bash
 docker compose ps
 ```
 
-Find `postgres_db`. It should be running; if a health check is configured, wait until its status is `healthy`.
-
-Check whether PostgreSQL accepts connections:
+Check whether both PostgreSQL containers accept connections:
 
 ```bash
-docker compose exec postgres_db pg_isready -U user -d postgres
+docker compose exec auth_db pg_isready -U auth_admin -d auth_service_db
+docker compose exec ats_db pg_isready -U ats_admin -d ats_core_db
 ```
 
-A successful result includes `accepting connections`.
+---
 
-## 2. Check that `auth_db` and `ats_db` exist
+## 3. Inspect `auth_db` (Spring Boot Auth & User Service)
 
-List all databases:
-
+List tables in `auth_db`:
 ```bash
-docker compose exec postgres_db psql -U user -d postgres -c '\l'
+docker compose exec auth_db psql -U auth_admin -d auth_service_db -c '\dt'
 ```
 
-Look for both `auth_db` and `ats_db` in the output.
-
-You can check each database individually too:
-
+Inspect the `users` table schema:
 ```bash
-docker compose exec postgres_db psql -U user -d auth_db -c 'SELECT current_database();'
-docker compose exec postgres_db psql -U user -d ats_db -c 'SELECT current_database();'
+docker compose exec auth_db psql -U auth_admin -d auth_service_db -c '\d "users"'
 ```
 
-If a command says the database does not exist, check the PostgreSQL initialization scripts and `src/.env`.
-
-## 3. List tables in `auth_db`
-
+View registered users (excluding password hashes):
 ```bash
-docker compose exec postgres_db psql -U user -d auth_db -c '\dt'
+docker compose exec auth_db psql -U auth_admin -d auth_service_db -c 'SELECT id, email, role, first_name, last_name, active, last_login_at FROM users;'
 ```
 
-This shows tables in the current schema (usually `public`). If no tables are listed, the auth service's migrations may not have run yet.
+---
 
-## 4. List tables in `ats_db`
+## 4. Inspect `ats_db` (Node.js Core ATS Service)
 
+List tables in `ats_db`:
 ```bash
-docker compose exec postgres_db psql -U user -d ats_db -c '\dt'
+docker compose exec ats_db psql -U ats_admin -d ats_core_db -c '\dt'
 ```
 
-This should show tables created by the ATS Prisma migrations, including `_prisma_migrations` if migrations have been applied. The exact table names depend on the Prisma schema and migration history.
-
-To list tables across all schemas:
-
+Inspect specific tables (e.g., `jobs`, `applications`, `resumes`):
 ```bash
-docker compose exec postgres_db psql -U user -d ats_db -c '\dt *.*'
+docker compose exec ats_db psql -U ats_admin -d ats_core_db -c '\d "jobs"'
+docker compose exec ats_db psql -U ats_admin -d ats_core_db -c '\d "applications"'
+docker compose exec ats_db psql -U ats_admin -d ats_core_db -c '\d "resumes"'
 ```
 
-## 5. Inspect a table's columns and indexes
-
-Use the exact table name returned by `\dt`. For example, if the table is named `jobs`:
-
+View seeded Kanban statuses and skills:
 ```bash
-docker compose exec postgres_db psql -U user -d ats_db -c '\d "jobs"'
+docker compose exec ats_db psql -U ats_admin -d ats_core_db -c 'SELECT * FROM "application_statuses" ORDER BY position;'
+docker compose exec ats_db psql -U ats_admin -d ats_core_db -c 'SELECT * FROM "skills" ORDER BY id;'
 ```
 
-For an auth table, replace the database and table name as needed:
+---
 
+## 5. Interactive `psql` Shells
+
+Open an interactive shell in `auth_db`:
 ```bash
-docker compose exec postgres_db psql -U user -d auth_db -c '\d "users"'
+docker compose exec auth_db psql -U auth_admin -d auth_service_db
 ```
 
-PostgreSQL table names are case-sensitive when created with quoted mixed-case names. Use the exact spelling shown by `\dt`.
-
-## 6. View rows inside a table
-
-Only use this for development/test data. Avoid printing sensitive user data or password hashes in shared logs.
-
-Example for the ATS database:
-
+Open an interactive shell in `ats_db`:
 ```bash
-docker compose exec postgres_db psql -U user -d ats_db -c 'SELECT * FROM "jobs" LIMIT 10;'
-```
-
-Example for an auth table (replace `users` with the actual table name):
-
-```bash
-docker compose exec postgres_db psql -U user -d auth_db -c 'SELECT * FROM "users" LIMIT 10;'
-```
-
-If the table uses a different capitalization or naming convention, adjust the command to match the exact table name.
-
-## 7. Open an interactive PostgreSQL shell
-
-Connect to ATS:
-
-```bash
-docker compose exec postgres_db psql -U user -d ats_db
-```
-
-Or connect to auth:
-
-```bash
-docker compose exec postgres_db psql -U user -d auth_db
+docker compose exec ats_db psql -U ats_admin -d ats_core_db
 ```
 
 Useful commands inside `psql`:
-
 | Command | Meaning |
-|---|---|
+| :--- | :--- |
 | `\l` | List databases |
 | `\dt` | List tables in the current schema |
-| `\dt *.*` | List tables across schemas |
-| `\d "jobs"` | Inspect a table's columns and indexes (use an actual table name) |
-| `\dn` | List schemas |
+| `\d "table_name"` | Inspect a table's columns, types, and indexes |
 | `\q` | Exit `psql` |
 
-## 8. Quick checks to copy and run
+---
+
+## 6. Prisma 7 Commands (`ats-api`)
 
 ```bash
-# PostgreSQL status
-docker compose ps
-docker compose exec postgres_db pg_isready -U user -d postgres
+# Generate the typed Prisma 7 client
+docker compose run --rm ats-api npx prisma generate
 
-# Databases
-docker compose exec postgres_db psql -U user -d postgres -c '\l'
+# Apply pending migrations to ats_db
+docker compose run --rm ats-api npx prisma migrate deploy
 
-# Tables in each database
-docker compose exec postgres_db psql -U user -d auth_db -c '\dt'
-docker compose exec postgres_db psql -U user -d ats_db -c '\dt'
+# Seed the 7 Kanban statuses and 12 starter skills
+docker compose run --rm ats-api npx prisma db seed
 ```
-
-## Troubleshooting
-
-- **`service "postgres_db" is not running`:** Start it with `docker compose up -d postgres_db`.
-- **`database "auth_db" does not exist` or `database "ats_db" does not exist`:** The database creation script may not have run. PostgreSQL initialization scripts run automatically only when initializing an empty data directory. You can create a missing database manually without deleting existing data.
-- **`Did not find any relations`:** The database exists, but no tables are visible in the current schema. Check whether the appropriate service migrations have run.
-- **Permission/authentication error:** Confirm `POSTGRES_USER` and `POSTGRES_PASSWORD` in `src/.env`. Do not commit secrets to this guide.
-- **No `user` role:** Replace `user` in the commands with the configured `POSTGRES_USER`.

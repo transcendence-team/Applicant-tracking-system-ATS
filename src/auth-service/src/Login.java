@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.crypto.SecretKey;
+import java.security.PrivateKey;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @RestController
@@ -22,7 +23,7 @@ public class Login {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey jwtKey;
+    private final PrivateKey jwtPrivateKey;
 
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
@@ -51,14 +52,27 @@ public class Login {
             );
         }
 
+        if (!user.isActive()) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "ACCOUNT_DISABLED",
+                    "This user account has been disabled"
+            );
+        }
+
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
+
         long now = System.currentTimeMillis();
         String token = Jwts.builder()
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
                 .claim("role", user.getRole())
+                .claim("firstName", user.getFirstName())
+                .claim("lastName", user.getLastName())
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + expirationMs))
-                .signWith(jwtKey)
+                .signWith(jwtPrivateKey, Jwts.SIG.RS256)
                 .compact();
 
         return new LoginResponse(token, "Bearer", expirationMs / 1000);

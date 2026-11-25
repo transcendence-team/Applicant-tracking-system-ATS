@@ -1,12 +1,16 @@
 # Use a lightweight Node.js image
-FROM node:20-alpine
+FROM node:22-slim
 
 # Set the working directory inside the container
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the rest of the application code
 COPY . .

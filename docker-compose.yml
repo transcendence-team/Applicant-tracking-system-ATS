@@ -11,13 +11,14 @@ services:
     depends_on:
       - frontend
       - auth-api
+      - ats-api
 
   frontend:
     build: ./src/frontend
     restart: always
     container_name: frontend
-    env_file:
-      - .env
+    environment:
+      AUTH_API_URL: ${AUTH_API_URL:-http://auth-api:8080}
     networks:
       - frontend_net
     depends_on:
@@ -27,8 +28,15 @@ services:
     build: ./src/auth-service
     container_name: auth-api
     restart: always
-    env_file:
-      - .env
+    environment:
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASS: ${AUTH_DB_PASS}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-7200000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     networks:
       - frontend_net
       - backend_net
@@ -43,11 +51,18 @@ services:
     networks:
       - backend_net
       - frontend_net
-    env_file:
-      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      ATS_SCHEMA_PATH: /ats-schema/schema.prisma
     volumes:
       - ./src/ats-service:/app
+      - ./src/postgres/ats-db/prisma:/ats-schema:ro
       - /app/node_modules
+    tmpfs:
+      - /app/prisma
+      - /app/src/generated
+    command: ["sh", "-c", "npm run prisma:generate && npm run prisma:migrate:deploy && exec npm run dev"]
     depends_on:
       ats_db:
         condition: service_healthy
