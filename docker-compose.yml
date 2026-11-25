@@ -100,22 +100,22 @@ services:
 
 
   auth_db:
-    image: postgres:18-alpine
+    image: mongo:8
     restart: always
     container_name: auth_db
     networks:
       - backend_net
     environment:
-      POSTGRES_DB: ${AUTH_DB_NAME}
-      POSTGRES_USER: ${AUTH_DB_USER}
-      POSTGRES_PASSWORD: ${AUTH_DB_PASS}
+      MONGO_INITDB_DATABASE: ${AUTH_DB_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${AUTH_DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${AUTH_DB_PASS}
     volumes:
-      - auth_data:/var/lib/postgresql
+      - auth_data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       retries: 5
-      start_period: 30s
+      start_period: 20s
       timeout: 10s
 
 

@@ -13,9 +13,9 @@ The Enterprise Applicant Tracking System (ATS) is structured around clean micros
 
 ## 2. Database Separation & User Identity Contract
 
-The project runs two isolated PostgreSQL 18 containers on `backend_net`:
-1. **`auth_db` (`auth_service_db`):** Managed by Spring Data JPA (`User.java`).
-2. **`ats_db` (`ats_core_db`):** Managed by Prisma 7 (`schema.prisma`).
+The project runs two isolated database containers on `backend_net`:
+1. **`auth_db` (`auth_service_db` — MongoDB 8):** Managed by Spring Data MongoDB (`User.java`, `users` collection).
+2. **`ats_db` (`ats_core_db` — PostgreSQL 18):** Managed by Prisma 7 (`schema.prisma`).
 
 ### Asymmetric RS256 JWT Verification
 `auth-api` signs JWTs using `JWT_PRIVATE_KEY` (`RS256`). Downstream services (`ats-api`) receive **only** `JWT_PUBLIC_KEY` to verify tokens statelessly:
@@ -46,5 +46,5 @@ Each container receives only the environment variables required for its responsi
 - **`frontend`:** `AUTH_API_URL`
 - **`auth-api`:** `AUTH_DB_NAME`, `AUTH_DB_USER`, `AUTH_DB_PASS`, `JWT_PRIVATE_KEY`, `JWT_PUBLIC_KEY`, `JWT_EXPIRATION_MS`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
 - **`ats-api`:** `DATABASE_URL`, `JWT_PUBLIC_KEY`
-- **`auth_db`:** `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (from `AUTH_DB_*`)
+- **`auth_db`:** `MONGO_INITDB_DATABASE`, `MONGO_INITDB_ROOT_USERNAME`, `MONGO_INITDB_ROOT_PASSWORD` (from `AUTH_DB_*`)
 - **`ats_db`:** `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (from `DB_*`)

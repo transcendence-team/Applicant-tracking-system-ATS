@@ -8,7 +8,7 @@ This project is an Enterprise Applicant Tracking System (ATS) designed to stream
 ## 2. Mandatory Baselines (Critical for Evaluation)
 * **HTTPS Enforcement:** All connections from the browser to the backend must be encrypted via HTTPS using TLS certificates configured in the NGINX reverse proxy (`:443 HTTPS / WSS`).
 * **Legal Documentation:** Privacy Policy and Terms of Service pages must be fully accessible and populated with relevant content regarding candidate data privacy and GDPR compliance.
-* **Database Schema:** A clear, documented database schema with well-defined relations for Users, Roles, Jobs, Applications, and Audit Logs in PostgreSQL.
+* **Database Schema:** A clear, documented database schema with well-defined relations for Jobs, Applications, and Audit Logs in PostgreSQL, alongside Users and Roles in MongoDB.
 * **Concurrent Multi-User Handling:** The system must handle multiple HR agents updating the Kanban board simultaneously without race conditions or data corruption.
 
 ## 3. Core Project Scope & Modules
@@ -17,7 +17,7 @@ This project is an Enterprise Applicant Tracking System (ATS) designed to stream
 ### Core Web & Interaction (10 Points)
 * **Web Frameworks (Major - 2pts):** Utilizing frameworks on both frontend and backend: Next.js (React) for the Frontend UI (`UI`), Java (Spring Boot) for the IAM Auth Service (`IAM`), and Node.js (Express) for the Core ATS Service (`ATS`).
 * **Real-time Features (Major - 2pts):** Integrated Real-Time WebSocket Server (Socket.io inside `ats-api`) routed via NGINX (`/api/ats/ws`). Internal event triggers from the Core ATS broadcast live applicant and Kanban card updates to all active HR agents without a page refresh.
-* **Use an ORM for the Database (Minor - 1pt):** Utilizing **Spring Data JPA (Hibernate)** in the Java Spring Boot Auth Service to manage Users and Roles, and an ORM (Prisma) in the Node.js Core ATS Service for type-safe relational database management.
+* **Use an ORM / ODM for the Database (Minor - 1pt):** Utilizing **Spring Data MongoDB** in the Java Spring Boot Auth Service to manage Users and Roles, and an ORM (Prisma) in the Node.js Core ATS Service for type-safe relational database management.
 * **Server-Side Rendering (Minor - 1pt):** Leveraging Next.js SSR on the Frontend UI for the public-facing "Job Board" pages (`GET /`) to ensure fast load times and SEO optimization.
 * **File Upload (Minor - 1pt):** A secure upload zone for candidates to submit PDF resumes via Core ATS, featuring client-side React validation and server-side file type/size validation before dispatching to the AI parser.
 * **Advanced Search (Minor - 1pt):** A search interface with drop-down filters (skill, date applied, status) and pagination to navigate high volumes of applicants.
@@ -34,7 +34,7 @@ This project is an Enterprise Applicant Tracking System (ATS) designed to stream
 ### DevOps & Infrastructure (4 Points)
 * **Backend as Microservices (Major - 2pts):** The architecture is split into loosely coupled, containerized services partitioned across two isolated Docker networks:
   * `frontend_net`: NGINX API Gateway, Frontend UI (`UI`), IAM Auth Service (`IAM`), and Core ATS Service with integrated WebSockets (`ATS`).
-  * `backend_net`: AI Worker Service (`AI`), Ollama Engine (`LLM`), and PostgreSQL Database (`DB`).
+  * `backend_net`: AI Worker Service (`AI`), Ollama Engine (`LLM`), PostgreSQL Database (`ats_db`), and MongoDB Database (`auth_db`).
 * **Monitoring System (Major - 2pts):** Prometheus collecting internal metrics from the microservices, visualized through a Grafana dashboard displaying real-time server health and API load.
 
 ## 4. Potential Fallback Modules (Extra Points)

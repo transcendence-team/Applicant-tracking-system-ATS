@@ -5,23 +5,24 @@ on:
     branches: [ "dev", "main" ]
     paths:
       - 'src/auth-service/**'
+      - '.github/workflows/auth-ci.yml'
 
 jobs:
   test-auth:
     runs-on: ubuntu-latest
 
-    # 1. Spin up a temporary, ephemeral Database for the tests
+    # 1. Spin up a temporary, ephemeral MongoDB instance for the tests
     services:
-      postgres:
-        image: postgres:18-alpine
+      mongodb:
+        image: mongo:8
         env:
-          POSTGRES_USER: auth_admin
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: auth_service_db
+          MONGO_INITDB_ROOT_USERNAME: auth_admin
+          MONGO_INITDB_ROOT_PASSWORD: test_password
+          MONGO_INITDB_DATABASE: auth_service_db
         ports:
-          - 5432:5432
+          - 27017:27017
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -37,12 +38,15 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 2. Pass the environment variables to Maven so Spring Boot can boot up
+      # 2. Pass the environment variables to Maven so Spring Boot can boot up and run all tests
       - name: Run Maven Tests
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/auth_service_db
-          SPRING_DATASOURCE_USERNAME: auth_admin
-          SPRING_DATASOURCE_PASSWORD: test_password
+          AUTH_DB_HOST: localhost
+          AUTH_DB_NAME: auth_service_db
+          AUTH_DB_USER: auth_admin
+          AUTH_DB_PASS: test_password
+          ADMIN_EMAIL: admin@ats.com
+          ADMIN_PASSWORD: adminPassword123
           JWT_PRIVATE_KEY: MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCnm3ZPEfwpNNA1KYVuCaVrKjHgIwnAJ1HrZuaW/5aSEQh11BWJ+RHPli7K4RXvNTXY5w47T00n6qmXfVGulbEqa7qeaQjN0pbsA1YKgQqZxHEK4eZ2zjLh9xUikDjeznqiwOiocDr0py5cKHWRK3ZEvpi3XQk8hGSkgT8tgazjNJeSTKNt5oM5bPeiLVILtqenwBRTboFLoCYosgAjnl4tRS+sqBN24TfOvOKSEydL+O5auTfTlPTXyqCPvJ0KatSbpg4/31ks+DU5qQSlgtrFNwZn4LzD4k6DuvBerdBgvE6q0Sn44vn6sdQQm3OXSkER2ZlvUGFC4dm7DE8RzRbvAgMBAAECggEAQxJRS98Um6DI2R1eieROUA44m0sqMb0KaTtqd26cYKN0UUKnw+jqGboty347etg+TihYZ5+abqjXaQn7T/QTS7iEm7PIlCT7xEKpgdaV2WblHce8pDpr3kU0Lfqs52yVYt/zusP+s7zbLoH6WjecQnJLRsVyVsdcRwB5uco0106kt9qfOiDMVoVOlgQFLEQeX4c1gXABR4DNxWJnVYUCnIyYKJCn5KE7ju4FVcvbotZmp/2AGxIpVM1kp0h+h+Jnh5wEq4Sb1Dig0dAsM9r+9fmuGHLK2OY2JTrmS/3snGq1ZgCLdNL/5oAA/m/DVFwWd2DFh9A5im0WBmuGLRbwIQKBgQDPRBP4aJbmLWu3rhdfrEB7bF7Mk+bzjjewag/ddeyq+ICP/AuTzUIZx747/WLAfatnzuWC9PxTPesDDfF3gBMLDXSI6/t58+jK/uhNMgDYRaASywGUHuWuzM8JNlXKjkQhd2sYHSU3tLPi04xZD0zmuJmWkCT9hca+37moG0lfGQKBgQDPBDezbXu/4cLsP0LqTqjY5LQkxt/x70maDgyzz3IEF7Tms6sd3HyKeU3A9Sh9nvrLLxLSetBESwi8NZ/n52Do/Jkk4/labAd/hjyvXlpo8Y5wZmobqjpiG0vrdqCaF9IFfB75RBrL7CZb7N9LiCHLJ86EdQcGeQs/hmdmH1NPRwKBgQCmhO56fCUIJuPM/bxfrDdeMdH0ELvTX6ZUQNIgPfb34ZEAnSH8DEOYDMdE0S1+szh7vVjdns/+XNesa45dUPN7xMKkots2voSAWs3t/0d4em/ByYGqLCyiBIAtyY6hny0TqirLg9b7610+1nGCt+0zzInw0jw1xz3G6l3xtoJ7OQKBgC04kqJTTDECM/4/Y3KjdCbM7r0J5GmJB97rKsMskY9rTk0G+l4vh9UH4oBADXRDgi1YPxhTU6NXcLUMUb3qwTSj2SBB3HpwFsM4o5D7X2yFN8Q92vfoG5DKva7V3wdKJMql7m4s/l2FXGvANpbdSeSC8Y3lsn8redWKmpOoTB6JAoGBALuskcoSK4NKCv94eUYg4YJZJ84mlEFwfG27HSIY3bGbmMsncD8fn6ogFcHynHI34M94azl/VabevINVwkatG9Hcx8WTiA/8aduNFw+bEl0xWtl6pkj6lBkxilqGQKsdv8Rz2owoIW899E0Uk1i4+ZqD+4qN0j/YfAOlf4x91R5i
           JWT_PUBLIC_KEY: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp5t2TxH8KTTQNSmFbgmlayox4CMJwCdR62bmlv+WkhEIddQVifkRz5YuyuEV7zU12OcOO09NJ+qpl31RrpWxKmu6nmkIzdKW7ANWCoEKmcRxCuHmds4y4fcVIpA43s56osDoqHA69KcuXCh1kSt2RL6Yt10JPIRkpIE/LYGs4zSXkkyjbeaDOWz3oi1SC7anp8AUU26BS6AmKLIAI55eLUUvrKgTduE3zrzikhMnS/juWrk305T018qgj7ydCmrUm6YOP99ZLPg1OakEpYLaxTcGZ+C8w+JOg7rwXq3QYLxOqtEp+OL5+rHUEJtzl0pBEdmZb1BhQuHZuwxPEc0W7wIDAQAB
           JWT_EXPIRATION_MS: 7200000
