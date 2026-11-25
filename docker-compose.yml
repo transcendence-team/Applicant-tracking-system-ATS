@@ -72,11 +72,6 @@ services:
     build: ./src/ai-worker
     container_name: ai-worker
     restart: always
-    ports:
-      # [TESTING MODE]: Exposed so you can test POST /parse from host/curl/REST client.
-      # [FULL INTEGRATION]: Remove or comment out 'ports' so the AI worker remains
-      # private on 'backend_net' and only accessible internally by ats-api.
-      - "8000:8000"
     volumes:
       # Live reload: edits in ./src/ai-worker reflect immediately inside container
       - ./src/ai-worker:/app
@@ -154,8 +149,6 @@ services:
     image: ollama/ollama:latest
     container_name: ollama
     restart: always
-    ports:
-      - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     networks:
