@@ -41,6 +41,15 @@ async def parse_resume(data: ParseRequest):
     try:
         extracted_text = await asyncio.to_thread(extractPdf, data.file_path)
 
+        if not extracted_text or not extracted_text.strip():
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": "EMPTY_RESUME_TEXT",
+                    "message": "No extractable text was found in the PDF resume.",
+                },
+            )
+
         async with evaluation_semaphore:
             evaluation = await evaluate_candidate(
                 resume_text=extracted_text,
@@ -57,6 +66,14 @@ async def parse_resume(data: ParseRequest):
             "evaluation": evaluation,
         }
 
+    except FileNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "RESUME_NOT_FOUND",
+                "message": f"Resume PDF not found at path: {data.file_path}",
+            },
+        )
     except Exception as exc:
         traceback.print_exc()
         return JSONResponse(

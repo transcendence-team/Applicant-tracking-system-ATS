@@ -72,6 +72,9 @@ services:
     build: ./src/ai-worker
     container_name: ai-worker
     restart: always
+    # TEMPORARY: expose locally for ai.rest testing (remove before production/PR)
+    ports:
+      - "127.0.0.1:8000:8000"
     volumes:
       # Live reload: edits in ./src/ai-worker reflect immediately inside container
       - ./src/ai-worker:/app
