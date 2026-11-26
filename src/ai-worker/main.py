@@ -1,17 +1,29 @@
+import asyncio
+from contextlib import asynccontextmanager
+import os
 import traceback
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pdfExtractor import extractPdf
-from aiEvaluation import evaluate_candidate
+from aiEvaluation import close_cloud_client, evaluate_candidate
 
-app = FastAPI(title="ATS AI Worker")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await close_cloud_client()
+
+
+app = FastAPI(title="ATS AI Worker", lifespan=lifespan)
+
+MAX_CONCURRENT_EVALUATIONS = int(os.getenv("MAX_CONCURRENT_EVALUATIONS", "10"))
+evaluation_semaphore = asyncio.Semaphore(MAX_CONCURRENT_EVALUATIONS)
 
 
 @app.get("/health")
-def health_check():
+async def health_check():
     return {"status": "ok", "service": "ai-worker"}
-
 
 
 class ParseRequest(BaseModel):
@@ -25,17 +37,17 @@ class ParseRequest(BaseModel):
 
 
 @app.post("/parse")
-def parse_resume(data: ParseRequest):
+async def parse_resume(data: ParseRequest):
     try:
+        extracted_text = await asyncio.to_thread(extractPdf, data.file_path)
 
-        extracted_text = extractPdf(data.file_path)
-
-        evaluation = evaluate_candidate(
-            resume_text=extracted_text,
-            job_title=data.job_title,
-            job_description=data.job_description,
-            required_skills=data.required_skills,
-        )
+        async with evaluation_semaphore:
+            evaluation = await evaluate_candidate(
+                resume_text=extracted_text,
+                job_title=data.job_title,
+                job_description=data.job_description,
+                required_skills=data.required_skills,
+            )
 
         return {
             "status": "COMPLETED",
