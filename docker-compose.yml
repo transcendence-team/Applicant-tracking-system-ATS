@@ -68,15 +68,28 @@ services:
         condition: service_healthy
         restart: true
 
-  # ai-worker:
-  #   build: ./src/ai-worker
-  #   container_name: ai-worker
-  #   networks: 
-  #     - backend_net
-  #   depends_on:
-  #     ats_db:
-  #       condition: service_healthy
-  #       restart: true
+  ai-worker:
+    build: ./src/ai-worker
+    container_name: ai-worker
+    restart: always
+    # TEMPORARY: expose locally for ai.rest testing (remove before production/PR)
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # Live reload: edits in ./src/ai-worker reflect immediately inside container
+      - ./src/ai-worker:/app
+      # ------------------------------------------------------------------------
+      # [FULL INTEGRATION STEP 1 - SHARED RESUME STORAGE]:
+      # When ats-api saves uploaded PDFs, mount the shared volume so ai-worker can read them:
+      # - resume_uploads:/app/uploads
+      # ------------------------------------------------------------------------
+    networks:
+      - backend_net
+    env_file:
+      - .env
+    # depends_on:
+    #   - ollama
+
 
 
   ats_db:
@@ -135,6 +148,24 @@ services:
         condition: service_healthy
         restart: true
 
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   restart: always
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   networks:
+  #     - backend_net
+  #   entrypoint: ["/bin/sh", "-c"]
+  #   command:
+  #     - |
+  #       /bin/ollama serve &
+  #       pid=$$!
+  #       sleep 5
+  #       echo "🔴 Verifying / pulling llama3.2:1b..."
+  #       ollama pull llama3.2:1b
+  #       wait $$pid
+
 networks:
   frontend_net:
     driver: bridge     
@@ -144,8 +175,6 @@ networks:
 volumes:
   auth_data:
   ats_data:
+  # ollama_data:
 
-
-# models:
-#   llm:
 
